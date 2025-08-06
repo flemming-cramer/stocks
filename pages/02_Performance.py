@@ -9,7 +9,7 @@ import yfinance as yf
 from components.nav import navbar
 
 
-st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="expanded")
 
 navbar(Path(__file__).name)
 
