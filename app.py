@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="AI Assisted Trading",
     page_icon="🚀",  # optional, if you want an icon
     layout="wide",  # optional, choose your layout
-    initial_sidebar_state="collapsed",  # hide the sidebar navigation
+    initial_sidebar_state="expanded",  # keep the sidebar visible on load
 )
 
 navbar(Path(__file__).name)
