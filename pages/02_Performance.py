@@ -1,9 +1,17 @@
-import streamlit as st
-import pandas as pd
 import sqlite3
-import yfinance as yf
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import streamlit as st
+import yfinance as yf
+
+
+st.set_page_config(page_title="Performance", layout="wide")
+st.title("📈 Performance Dashboard")
+with st.container():
+    st.page_link("app.py", label="📊 Portfolio", icon="📊")
+    st.page_link("pages/02_Performance.py", label="📈 Performance", icon="📈")
 
 
 @st.cache_data
@@ -11,11 +19,12 @@ def load_portfolio_history(db_path: str) -> pd.DataFrame:
     """Load total equity history from the portfolio database."""
     conn = sqlite3.connect(db_path)
     query = (
-        "SELECT Date, Total_Equity FROM portfolio_history "
-        "WHERE Ticker='TOTAL' ORDER BY Date;"
+        "SELECT date AS Date, total_equity AS Total_Equity "
+        "FROM portfolio_history WHERE ticker='TOTAL' ORDER BY date;"
     )
     df = pd.read_sql_query(query, conn, parse_dates=["Date"])
     conn.close()
+    df["Total_Equity"] = df["Total_Equity"].astype(float)
     return df
 
 
@@ -29,19 +38,22 @@ def load_spx(start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
 
 
 def main() -> None:
-    st.title("📈 Performance Dashboard")
-
-    db_path = Path(__file__).resolve().parent.parent / "Scripts and CSV Files" / "portfolio.db"
+    db_path = Path(__file__).resolve().parent.parent / "data" / "trading.db"
     history = load_portfolio_history(str(db_path))
 
     min_date = history["Date"].min().date()
     max_date = history["Date"].max().date()
     start_date, end_date = st.date_input(
-        "Select date range", value=(min_date, max_date), min_value=min_date, max_value=max_date
+        "Select date range",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date,
     )
     show_benchmark = st.checkbox("Show S&P 500 benchmark", value=True)
 
-    mask = (history["Date"] >= pd.to_datetime(start_date)) & (history["Date"] <= pd.to_datetime(end_date))
+    mask = (history["Date"] >= pd.to_datetime(start_date)) & (
+        history["Date"] <= pd.to_datetime(end_date)
+    )
     hist_filtered = history.loc[mask]
 
     fig, ax = plt.subplots()
@@ -54,8 +66,13 @@ def main() -> None:
 
     if show_benchmark:
         spx = load_spx(pd.to_datetime(start_date), pd.to_datetime(end_date))
-        spx_filtered = spx[(spx["Date"] >= pd.to_datetime(start_date)) & (spx["Date"] <= pd.to_datetime(end_date))]
-        ax.plot(spx_filtered["Date"], spx_filtered["SPX_Equity"], marker="o", label="S&P 500")
+        spx_filtered = spx[
+            (spx["Date"] >= pd.to_datetime(start_date))
+            & (spx["Date"] <= pd.to_datetime(end_date))
+        ]
+        ax.plot(
+            spx_filtered["Date"], spx_filtered["SPX_Equity"], marker="o", label="S&P 500"
+        )
 
     ax.set_xlabel("Date")
     ax.set_ylabel("Equity")
@@ -73,3 +90,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

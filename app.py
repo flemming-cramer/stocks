@@ -13,6 +13,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"  # optional
 )
 
+st.title("📊 Portfolio Dashboard")
+with st.container():
+    st.page_link("app.py", label="📊 Portfolio", icon="📊")
+    st.page_link("pages/02_Performance.py", label="📈 Performance", icon="📈")
+
 
 def main() -> None:
     """Application entry point."""
