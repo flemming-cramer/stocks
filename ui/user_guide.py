@@ -2,7 +2,6 @@ import streamlit as st
 
 
 def render_user_guide() -> None:
-    st.header("User Guide")
     st.markdown(
         """
         ### Getting Started
