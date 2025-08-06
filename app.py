@@ -1,22 +1,24 @@
 """Streamlit app for local portfolio tracking and AI‑assisted trading."""
 
+from pathlib import Path
+
 import streamlit as st
 from streamlit import config as _config
 
+from components.nav import navbar
 from ui.dashboard import render_dashboard
 from ui.user_guide import render_user_guide
 
 st.set_page_config(
     page_title="AI Assisted Trading",
-    page_icon="🚀",           # optional, if you want an icon
-    layout="wide",           # optional, choose your layout
-    initial_sidebar_state="expanded"  # optional
+    page_icon="🚀",  # optional, if you want an icon
+    layout="wide",  # optional, choose your layout
+    initial_sidebar_state="collapsed",  # hide the sidebar navigation
 )
 
+navbar(Path(__file__).name)
+
 st.title("📊 Portfolio Dashboard")
-with st.container():
-    st.page_link("app.py", label="📊 Portfolio", icon="📊")
-    st.page_link("pages/02_Performance.py", label="📈 Performance", icon="📈")
 
 
 def main() -> None:
