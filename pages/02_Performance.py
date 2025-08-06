@@ -6,12 +6,14 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
+from components.nav import navbar
 
-st.set_page_config(page_title="Performance", layout="wide")
+
+st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="collapsed")
+
+navbar(Path(__file__).name)
+
 st.title("📈 Performance Dashboard")
-with st.container():
-    st.page_link("app.py", label="📊 Portfolio", icon="📊")
-    st.page_link("pages/02_Performance.py", label="📈 Performance", icon="📈")
 
 
 @st.cache_data
