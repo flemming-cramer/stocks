@@ -13,7 +13,7 @@ st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_stat
 
 navbar(Path(__file__).name)
 
-st.title("📈 Performance Dashboard")
+st.header("Performance Dashboard")
 
 
 @st.cache_data

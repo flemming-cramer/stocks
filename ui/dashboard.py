@@ -2,7 +2,6 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from config import TRADE_LOG_CSV
 from data.portfolio import save_portfolio_snapshot
 from services.session import init_session_state
 from ui.watchlist import show_watchlist_sidebar
@@ -16,27 +15,6 @@ def render_dashboard() -> None:
     """Render the main dashboard tab."""
 
     init_session_state()
-
-    header_cols = st.columns([4, 1, 1])
-    header_cols[0].title("AI Assisted Trading")
-    if not st.session_state.portfolio.empty:
-        csv = st.session_state.portfolio.to_csv(index=False).encode("utf-8")
-        header_cols[1].download_button(
-            "Download Portfolio", csv, "portfolio_snapshot.csv", "text/csv"
-        )
-    else:
-        header_cols[1].empty()
-    if TRADE_LOG_CSV.exists():
-        tl_df = pd.read_csv(TRADE_LOG_CSV)
-        if not tl_df.empty:
-            tl_csv = tl_df.to_csv(index=False).encode("utf-8")
-            header_cols[2].download_button(
-                "Download Trade Log", tl_csv, "trade_log.csv", "text/csv"
-            )
-        else:
-            header_cols[2].empty()
-    else:
-        header_cols[2].empty()
 
     show_watchlist_sidebar()
     show_onboarding()
