@@ -95,8 +95,6 @@ def main() -> None:
         st.metric("Max Drawdown (%)", f"{max_drawdown:.2f}%")
         st.metric("Number of Trading Days", f"{num_days}")
         st.metric("Average Daily Return (%)", f"{avg_daily_return:.2f}%")
-        st.metric("Volatility (%)", f"{volatility:.2f}%")
-        st.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
 
 
 if __name__ == "__main__":
