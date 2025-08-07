@@ -11,7 +11,7 @@ from ui.dashboard import render_dashboard
 st.set_page_config(
     page_title="AI Assisted Trading",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 navbar(Path(__file__).name)

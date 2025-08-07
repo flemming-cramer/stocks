@@ -9,7 +9,7 @@ from components.nav import navbar
 from ui.watchlist import show_watchlist_sidebar
 
 
-st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="collapsed")
 
 navbar(Path(__file__).name)
 

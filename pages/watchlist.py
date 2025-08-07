@@ -7,7 +7,7 @@ import streamlit as st
 from components.nav import navbar
 from services.market import fetch_price, fetch_prices
 from services.session import get_watchlist, add_to_watchlist
-from forms import LogABuy
+from ui.forms import LogABuy
 
 
 @st.experimental_memo(ttl=1800)
@@ -51,7 +51,7 @@ def watchlist_page() -> None:
     st.set_page_config(
         page_title="Watchlist",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
     )
     navbar(Path(__file__).name)
 
