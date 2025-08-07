@@ -97,12 +97,7 @@ def show_sell_form() -> None:
         else:
             st.session_state.feedback = ("error", msg)
 
-    st.checkbox("Always show Sell form", key="show_sell")
-    expanded = not st.session_state.portfolio.empty and st.session_state.get(
-        "show_sell", False
-    )
-
-    with st.expander("Log a Sell", expanded=expanded):
+    with st.expander("Log a Sell"):
         holdings = st.session_state.portfolio
         if holdings.empty:
             st.info("You have no holdings to sell.")
