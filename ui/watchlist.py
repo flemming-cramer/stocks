@@ -11,13 +11,13 @@ def show_watchlist_sidebar() -> None:
     """Render ticker lookup and watchlist in the sidebar."""
 
     sidebar = st.sidebar
-    sidebar.caption("Watchlist Tool")
+    sidebar.markdown("### Watchlist Tool")
+    sidebar.caption("Track tickers to monitor their latest prices.")
     sidebar.divider()
-    sidebar.header("Ticker Lookup")
     feedback_slot = sidebar.empty()
 
-    def add_watchlist_and_clear(sym: str, price: float, portfolio_tickers: set[str]) -> None:
-        """Callback to add ``sym`` to the watchlist and reset lookup fields."""
+    def add_watchlist(sym: str, price: float, portfolio_tickers: set[str]) -> None:
+        """Add ``sym`` to the watchlist."""
 
         if sym in st.session_state.watchlist:
             st.session_state.watchlist_feedback = ("info", f"{sym} already in watchlist.")
@@ -47,26 +47,25 @@ def show_watchlist_sidebar() -> None:
         )
 
     error_slot = sidebar.empty()
-    symbol = sidebar.text_input("Symbol", key="lookup_symbol", placeholder="e.g. AAPL")
-    lookup_error = ""
-    if symbol:
-        sym = symbol.upper()
-        price = fetch_price(sym)
-        if price is None:
-            lookup_error = "Ticker not found."
-        else:
-            ticker_obj = yf.Ticker(sym)
-            name = ticker_obj.info.get("shortName") or ticker_obj.info.get("longName") or sym
-            sidebar.write(f"{name}: ${price:.2f}")
-            sidebar.button(
-                "Add to Watchlist",
-                key="add_watchlist",
-                on_click=add_watchlist_and_clear,
-                args=(sym, price, portfolio_tickers),
-            )
+    with sidebar.form("lookup_form", clear_on_submit=True):
+        symbol = st.text_input(
+            "",
+            key="lookup_symbol",
+            placeholder="Enter stock ticker (e.g., AAPL)",
+            label_visibility="collapsed",
+        )
+        submitted = st.form_submit_button("Add to Watchlist")
 
-    if lookup_error:
-        error_slot.error(lookup_error)
+    if submitted:
+        if symbol:
+            sym = symbol.upper()
+            price = fetch_price(sym)
+            if price is None:
+                error_slot.error("Ticker not found.")
+            else:
+                add_watchlist(sym, price, portfolio_tickers)
+        else:
+            error_slot.error("Please enter a ticker symbol.")
 
     if st.session_state.watchlist:
         header = sidebar.container()
@@ -88,16 +87,16 @@ def show_watchlist_sidebar() -> None:
                         updated[st.session_state.watchlist[0]] = float(val)
             st.session_state.watchlist_prices.update(updated)
 
-        sidebar.markdown(
-            "<style>.wl-remove{color:red; border:none; background:none; font-size:18px;}\n</style>",
-            unsafe_allow_html=True,
-        )
-        for t in list(st.session_state.watchlist):
+        for t in sorted(list(st.session_state.watchlist)):
             price = st.session_state.watchlist_prices.get(t)
             price_str = f"${price:.2f}" if price is not None else "N/A"
-            col1, col2 = sidebar.columns([4, 1])
-            col1.write(f"{t}: {price_str}")
-            if col2.button("\u274c", key=f"rm_{t}", help="Remove", use_container_width=True):
+            row = sidebar.container()
+            col1, col2 = row.columns([4, 1])
+            col1.markdown(
+                f"**{t}**<br><span style='color:gray;font-size:0.9em'>{price_str}</span>",
+                unsafe_allow_html=True,
+            )
+            if col2.button("🗑️", key=f"rm_{t}", help=f"Remove {t}"):
                 st.session_state.watchlist.remove(t)
                 st.session_state.watchlist_prices.pop(t, None)
                 save_watchlist(st.session_state.watchlist)
