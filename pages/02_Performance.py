@@ -6,11 +6,14 @@ import pandas as pd
 import streamlit as st
 
 from components.nav import navbar
+from ui.watchlist import show_watchlist_sidebar
 
 
 st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="expanded")
 
 navbar(Path(__file__).name)
+
+show_watchlist_sidebar()
 
 st.subheader("Performance Dashboard")
 
