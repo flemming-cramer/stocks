@@ -5,7 +5,6 @@ import streamlit as st
 from data.portfolio import save_portfolio_snapshot
 from services.session import init_session_state
 from ui.watchlist import show_watchlist_sidebar
-from ui.onboarding import show_onboarding
 from ui.cash import show_cash_section
 from ui.forms import show_buy_form, show_sell_form
 from ui.summary import build_daily_summary
@@ -17,7 +16,6 @@ def render_dashboard() -> None:
     init_session_state()
 
     show_watchlist_sidebar()
-    show_onboarding()
 
     feedback = st.session_state.pop("feedback", None)
     if feedback:
