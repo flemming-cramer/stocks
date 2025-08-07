@@ -3,10 +3,9 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-from streamlit.runtime.scriptrunner import RerunException
 
 from components.nav import navbar
-from services.market import fetch_price, fetch_prices
+from services.market import fetch_prices
 from services.session import get_watchlist, add_to_watchlist
 from ui.forms import LogABuy
 
@@ -64,7 +63,11 @@ def watchlist_page() -> None:
     )
     if st.button("Add"):
         add_to_watchlist(new_ticker.upper())
-        raise RerunException()
+        try:
+            st.experimental_rerun()
+        except AttributeError:
+            from streamlit.runtime.scriptrunner.script_runner import RerunException
+            raise RerunException(rerun_data={})
 
     watchlist = get_watchlist()
 
@@ -125,7 +128,11 @@ def watchlist_page() -> None:
                     s_cols[0].write(sym)
                     if s_cols[1].button("Add", key=f"add_{sym}"):
                         add_to_watchlist(sym)
-                        raise RerunException()
+                        try:
+                            st.experimental_rerun()
+                        except AttributeError:
+                            from streamlit.runtime.scriptrunner.script_runner import RerunException
+                            raise RerunException(rerun_data={})
 
 
 if __name__ == "__main__":
