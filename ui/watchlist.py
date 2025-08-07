@@ -50,7 +50,7 @@ def show_watchlist_sidebar() -> None:
         symbol = st.text_input(
             "",
             key="lookup_symbol",
-            placeholder="Enter stock ticker (e.g., AAPL)",
+            placeholder="(e.g., AAPL)",
             label_visibility="collapsed",
         )
         submitted = st.form_submit_button("Add to Watchlist")
