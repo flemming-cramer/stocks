@@ -6,7 +6,7 @@ import streamlit as st
 
 from components.nav import navbar
 from services.market import fetch_prices
-from services.session import get_watchlist, add_to_watchlist
+from services.session import get_watchlist, add_to_watchlist, remove_from_watchlist
 from ui.forms import LogABuy
 
 
