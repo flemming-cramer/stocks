@@ -10,7 +10,7 @@ from services.session import get_watchlist, add_to_watchlist
 from ui.forms import LogABuy
 
 
-@st.experimental_memo(ttl=1800)
+@st.cache_data(ttl=1800)
 def _load_prices(tickers: list[str]) -> pd.DataFrame:
     """Fetch market data for ``tickers`` and cache it for 30 minutes."""
 
