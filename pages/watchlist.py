@@ -1,139 +1,115 @@
-from pathlib import Path
-from datetime import datetime
-
-import pandas as pd
 import streamlit as st
 
-from components.nav import navbar
-from services.market import fetch_prices
-from services.market import YFPricesMissingError
+st.set_page_config(
+    page_title="Watchlist",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+# Hide the default sidebar completely
+st.markdown(
+    """
+    <style>
+        section[data-testid="stSidebar"] { display: none; }
+        button[aria-label="Main menu"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 from services.session import get_watchlist, add_to_watchlist, remove_from_watchlist
+from services.market import fetch_price
 from ui.forms import LogABuy
 
 
 @st.cache_data(ttl=1800)
-def _load_prices(tickers: list[str]) -> pd.DataFrame:
-    """Fetch market data for ``tickers`` and cache it for 30 minutes."""
-
-    return fetch_prices(tickers)
-
-
-def recommend_tickers(portfolio, watchlist: list[str]) -> list[str]:
-    """Return a list of up to five suggested tickers.
-
-    This is a placeholder that simply suggests popular large-cap stocks not
-    already in the portfolio or watchlist. The recommendation logic can be
-    expanded to analyse industry peers and top movers.
-    """
-
-    universe = [
-        "AAPL",
-        "MSFT",
-        "GOOGL",
-        "AMZN",
-        "TSLA",
-        "NVDA",
-        "META",
-        "NFLX",
-        "INTC",
-        "AMD",
-    ]
-    portfolio_tickers: set[str] = set()
-    try:
-        portfolio_tickers = set(portfolio.get("Ticker", []))
-    except Exception:
-        pass
-    return [t for t in universe if t not in watchlist and t not in portfolio_tickers][:5]
+def load_watchlist_prices(tickers: list[str]) -> dict[str, dict]:
+    prices = {}
+    for t in tickers:
+        try:
+            prices[t] = fetch_price(t)
+        except Exception:
+            # skip invalid or missing tickers
+            continue
+    return prices
 
 
-def watchlist_page() -> None:
-    """Render the watchlist management page."""
+def watchlist_page():
+    # Title
+    st.title("Watchlist")
 
-    st.set_page_config(
-        page_title="Watchlist",
-        layout="wide",
-        initial_sidebar_state="collapsed",
-    )
-    navbar(Path(__file__).name)
-
-    st.header("Watchlist")
-
+    # Add-ticker input with placeholder
     new_ticker = st.text_input(
         "Add ticker to watchlist",
         placeholder="Enter ticker symbol. E.g. AAPL",
     )
     if st.button("Add"):
-        add_to_watchlist(new_ticker.upper())
-        try:
-            st.experimental_rerun()
-        except AttributeError:
-            from streamlit.runtime.scriptrunner.script_runner import RerunException
-            raise RerunException(rerun_data={})
+        symbol = new_ticker.strip().upper()
+        if symbol:
+            try:
+                fetch_price(symbol)
+            except Exception as e:
+                st.error(f"Could not add {symbol}: {e}")
+            else:
+                add_to_watchlist(symbol)
+                st.experimental_rerun()
 
+    # Load current watchlist and prices
     watchlist = get_watchlist()
+    prices = load_watchlist_prices(watchlist)
 
-    price_data = _load_prices(watchlist) if watchlist else pd.DataFrame()
+    # Render table header
+    st.markdown("## Current Watchlist")
+    cols = st.columns([3, 2, 2, 1, 1])
+    cols[0].markdown("**Ticker**")
+    cols[1].markdown("**Price**")
+    cols[2].markdown("**Change %**")
+    cols[3].markdown("**Delete**")
+    cols[4].markdown("**Buy**")
 
-    if not price_data.empty:
-        st.caption(f"Prices as of {datetime.now():%Y-%m-%d %H:%M:%S}")
+    # Loop through tickers
+    for ticker in watchlist:
+        price_info = prices.get(ticker)
+        if not price_info:
+            continue
+        price = price_info.get("price")
+        change_pct = price_info.get("change_pct")
+        row_cols = st.columns([3, 2, 2, 1, 1])
+        row_cols[0].write(ticker)
+        row_cols[1].write(f"${price:.2f}")
+        row_cols[2].write(f"{change_pct:.2f}%")
+        if row_cols[3].button("❌", key=f"del_{ticker}"):
+            remove_from_watchlist(ticker)
+            st.experimental_rerun()
+        if row_cols[4].button("Buy", key=f"buy_{ticker}"):
+            with st.modal(f"Buy {ticker}"):
+                LogABuy(ticker_default=ticker)
 
-    header_cols = st.columns([2, 2, 2, 2, 2, 1])
-    header_cols[0].write("Ticker")
-    header_cols[1].write("Current Price")
-    header_cols[2].write("Day % Change")
-    header_cols[3].write("Market Value")
-    header_cols[4].write("Stop-Loss")
-    header_cols[5].write("")
-
-    if watchlist and not price_data.empty:
-        if isinstance(price_data.columns, pd.MultiIndex):
-            closes = price_data["Close"].iloc[-1]
-            opens = price_data["Open"].iloc[0]
-            for ticker in watchlist:
-                close = float(closes.get(ticker, float("nan")))
-                open_ = float(opens.get(ticker, float("nan")))
-                change = (close - open_) / open_ * 100 if open_ else float("nan")
-                cols = st.columns([2, 2, 2, 2, 2, 1])
-                cols[0].write(ticker)
-                cols[1].write(f"${close:.2f}" if not pd.isna(close) else "N/A")
-                cols[2].write(f"{change:.2f}%" if not pd.isna(change) else "N/A")
-                cols[3].write("-")
-                cols[4].write("-")
-                if cols[5].button(f"Buy {ticker}", key=f"buy_{ticker}"):
-                    with st.modal(f"Buy {ticker}"):
-                        LogABuy(ticker_default=ticker)
-        else:
-            close = float(price_data["Close"].iloc[-1])
-            open_ = float(price_data["Open"].iloc[0])
-            change = (close - open_) / open_ * 100 if open_ else float("nan")
-            ticker = watchlist[0]
-            cols = st.columns([2, 2, 2, 2, 2, 1])
-            cols[0].write(ticker)
-            cols[1].write(f"${close:.2f}" if not pd.isna(close) else "N/A")
-            cols[2].write(f"{change:.2f}%" if not pd.isna(change) else "N/A")
-            cols[3].write("-")
-            cols[4].write("-")
-            if cols[5].button(f"Buy {ticker}", key=f"buy_{ticker}"):
-                with st.modal(f"Buy {ticker}"):
-                    LogABuy(ticker_default=ticker)
-    else:
-        st.info("Your watchlist is empty.")
-
+    # Suggested Tickers (only when watchlist not empty)
+    from services.session import get_portfolio  # if you have a portfolio getter
+    portfolio = get_portfolio()
     if watchlist:
         with st.expander("Suggested Tickers"):
             if st.button("Recommend Tickers"):
-                portfolio = st.session_state.get("portfolio")
                 suggestions = recommend_tickers(portfolio, watchlist)
-                for sym in suggestions:
-                    s_cols = st.columns([3, 1])
-                    s_cols[0].write(sym)
-                    if s_cols[1].button("Add", key=f"add_{sym}"):
-                        add_to_watchlist(sym)
-                        try:
-                            st.experimental_rerun()
-                        except AttributeError:
-                            from streamlit.runtime.scriptrunner.script_runner import RerunException
-                            raise RerunException(rerun_data={})
+            else:
+                suggestions = []
+            for s in suggestions:
+                cols = st.columns([4, 1])
+                cols[0].write(s)
+                if cols[1].button("Add", key=f"add_sugg_{s}"):
+                    add_to_watchlist(s)
+                    st.experimental_rerun()
+
+
+def recommend_tickers(portfolio: list[str], watchlist: list[str]) -> list[str]:
+    """Return up to five suggested tickers.
+
+    This is a placeholder for future industry-peer and top-mover logic.
+    """
+
+    # TODO: implement industry-peer and top-mover logic
+    return []
 
 
 if __name__ == "__main__":
