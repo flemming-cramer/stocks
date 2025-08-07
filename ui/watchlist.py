@@ -28,7 +28,6 @@ def show_watchlist_sidebar() -> None:
             st.session_state.watchlist_prices[sym] = price
             save_watchlist(st.session_state.watchlist)
             st.session_state.watchlist_feedback = ("success", f"{sym} added to watchlist.")
-        st.session_state.lookup_symbol = ""
 
     portfolio_tickers = (
         set(st.session_state.portfolio[COL_TICKER].values)
