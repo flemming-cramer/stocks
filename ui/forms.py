@@ -154,3 +154,6 @@ def show_sell_form() -> None:
             st.form_submit_button("Submit Sell", on_click=submit_sell)
 
 
+LogABuy = show_buy_form
+
+
