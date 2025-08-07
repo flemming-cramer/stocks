@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 
 st.set_page_config(
@@ -17,6 +19,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+from components.nav import navbar
 from services.session import get_watchlist, add_to_watchlist, remove_from_watchlist
 from services.market import fetch_price
 from ui.forms import LogABuy
@@ -35,7 +38,7 @@ def load_watchlist_prices(tickers: list[str]) -> dict[str, dict]:
 
 
 def watchlist_page():
-    # Title
+    navbar(Path(__file__).name)
     st.title("Watchlist")
 
     # Add-ticker input with placeholder
@@ -84,33 +87,6 @@ def watchlist_page():
         if row_cols[4].button("Buy", key=f"buy_{ticker}"):
             with st.modal(f"Buy {ticker}"):
                 LogABuy(ticker_default=ticker)
-
-    # Suggested Tickers (only when watchlist not empty)
-    from services.session import get_portfolio  # if you have a portfolio getter
-    portfolio = get_portfolio()
-    if watchlist:
-        with st.expander("Suggested Tickers"):
-            if st.button("Recommend Tickers"):
-                suggestions = recommend_tickers(portfolio, watchlist)
-            else:
-                suggestions = []
-            for s in suggestions:
-                cols = st.columns([4, 1])
-                cols[0].write(s)
-                if cols[1].button("Add", key=f"add_sugg_{s}"):
-                    add_to_watchlist(s)
-                    st.experimental_rerun()
-
-
-def recommend_tickers(portfolio: list[str], watchlist: list[str]) -> list[str]:
-    """Return up to five suggested tickers.
-
-    This is a placeholder for future industry-peer and top-mover logic.
-    """
-
-    # TODO: implement industry-peer and top-mover logic
-    return []
-
 
 if __name__ == "__main__":
     watchlist_page()
