@@ -48,14 +48,9 @@ def watchlist_page():
     # persist across reruns using session state
     if "new_ticker" not in st.session_state:
         st.session_state["new_ticker"] = ""
-    new_ticker = input_col.text_input(
-        "Add ticker to watchlist",
-        placeholder="Enter ticker symbol. E.g. AAPL",
-        key="new_ticker",
-        value=st.session_state["new_ticker"],
-    )
-    if st.button("Add"):
-        symbol = new_ticker.strip().upper()
+
+    def add_ticker():
+        symbol = st.session_state["new_ticker"].strip().upper()
         if symbol:
             try:
                 fetch_price(symbol)
@@ -63,7 +58,15 @@ def watchlist_page():
                 st.error(f"Could not add {symbol}: {e}")
             else:
                 add_to_watchlist(symbol)
+                st.session_state["new_ticker"] = ""
                 st.experimental_rerun()
+
+    input_col.text_input(
+        "Add ticker to watchlist",
+        placeholder="Enter ticker symbol. E.g. AAPL",
+        key="new_ticker",
+    )
+    input_col.button("Add", on_click=add_ticker)
 
     # Load current watchlist and prices
     watchlist = get_watchlist()
