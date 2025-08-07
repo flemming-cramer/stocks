@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
+from streamlit.runtime.scriptrunner import RerunException
 
 from components.nav import navbar
 from services.market import fetch_price, fetch_prices
@@ -57,10 +58,13 @@ def watchlist_page() -> None:
 
     st.header("Watchlist")
 
-    new_ticker = st.text_input("Add ticker to watchlist")
+    new_ticker = st.text_input(
+        "Add ticker to watchlist",
+        placeholder="Enter ticker symbol. E.g. AAPL",
+    )
     if st.button("Add"):
         add_to_watchlist(new_ticker.upper())
-        st.experimental_rerun()
+        raise RerunException()
 
     watchlist = get_watchlist()
 
@@ -111,16 +115,17 @@ def watchlist_page() -> None:
     else:
         st.info("Your watchlist is empty.")
 
-    with st.expander("Suggested Tickers"):
-        if st.button("Recommend Tickers"):
-            portfolio = st.session_state.get("portfolio")
-            suggestions = recommend_tickers(portfolio, watchlist)
-            for sym in suggestions:
-                s_cols = st.columns([3, 1])
-                s_cols[0].write(sym)
-                if s_cols[1].button("Add", key=f"add_{sym}"):
-                    add_to_watchlist(sym)
-                    st.experimental_rerun()
+    if watchlist:
+        with st.expander("Suggested Tickers"):
+            if st.button("Recommend Tickers"):
+                portfolio = st.session_state.get("portfolio")
+                suggestions = recommend_tickers(portfolio, watchlist)
+                for sym in suggestions:
+                    s_cols = st.columns([3, 1])
+                    s_cols[0].write(sym)
+                    if s_cols[1].button("Add", key=f"add_{sym}"):
+                        add_to_watchlist(sym)
+                        raise RerunException()
 
 
 if __name__ == "__main__":
