@@ -59,7 +59,7 @@ def watchlist_page():
             else:
                 add_to_watchlist(symbol)
                 st.session_state["new_ticker"] = ""
-                st.experimental_rerun()
+                
 
     input_col.text_input(
         "Add ticker to watchlist",
@@ -88,15 +88,18 @@ def watchlist_page():
         price_info = prices.get(ticker)
         if not price_info:
             continue
-        price = price_info.get("price")
-        change_pct = price_info.get("change_pct")
+        price = float(price_info)
+        change_pct = None
         row_cols = st.columns([3, 2, 2, 1, 1])
         row_cols[0].write(ticker)
         row_cols[1].write(f"${price:.2f}")
-        row_cols[2].write(f"{change_pct:.2f}%")
+        if change_pct is None:
+            row_cols[2].write("-")
+        else:
+            row_cols[2].write(f"{change_pct:.2f}%")
         if row_cols[3].button("❌", key=f"del_{ticker}"):
             remove_from_watchlist(ticker)
-            st.experimental_rerun()
+            st.rerun()
         if row_cols[4].button("Buy", key=f"buy_{ticker}"):
             with st.modal(f"Buy {ticker}"):
                 LogABuy(ticker_default=ticker)
