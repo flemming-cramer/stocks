@@ -6,14 +6,10 @@ import pandas as pd
 import streamlit as st
 
 from components.nav import navbar
-from ui.watchlist import show_watchlist_sidebar
-
 
 st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_state="collapsed")
 
 navbar(Path(__file__).name)
-
-show_watchlist_sidebar()
 
 st.subheader("Performance Dashboard")
 
@@ -75,12 +71,7 @@ def main() -> None:
     total_return = (final_equity / initial_equity - 1) * 100
     daily_returns = hist_filtered["Total_Equity"].pct_change().dropna()
     avg_daily_return = daily_returns.mean() * 100
-    volatility = daily_returns.std() * 100
-    sharpe_ratio = (
-        (daily_returns.mean() / daily_returns.std()) * (252 ** 0.5)
-        if not daily_returns.empty and daily_returns.std() != 0
-        else 0
-    )
+    
     roll_max = hist_filtered["Total_Equity"].cummax()
     drawdown = hist_filtered["Total_Equity"] / roll_max - 1
     max_drawdown = drawdown.min() * 100
