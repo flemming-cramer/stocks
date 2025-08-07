@@ -80,15 +80,12 @@ def render_dashboard() -> None:
         header_cols = st.columns([4, 1, 1])
         with header_cols[0]:
             st.subheader("Current Portfolio")
-        with header_cols[1]:
+        with header_cols[2]:
             auto_refresh = st.checkbox(
                 "Auto-refresh every 30 min",
                 key="auto_refresh",
                 label_visibility="visible",
             )
-        with header_cols[2]:
-            if st.button("🔄", key="refresh_portfolio", help="Refresh portfolio"):
-                st.experimental_rerun()
 
         if port_table.empty:
             st.info(

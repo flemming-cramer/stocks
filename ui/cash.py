@@ -37,7 +37,7 @@ def show_cash_section() -> None:
                 "Amount",
                 min_value=0.0,
                 value=0.0,
-                step=0.01,
+                step=1.0,
                 format="%.2f",
                 key="ac_amount",
             )
