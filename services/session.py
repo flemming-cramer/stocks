@@ -51,3 +51,18 @@ def add_to_watchlist(ticker: str) -> None:
     if symbol and symbol not in watchlist:
         watchlist.append(symbol)
         save_watchlist(watchlist)
+
+
+def remove_from_watchlist(symbol: str) -> None:
+    """Remove a ticker symbol from the watchlist in session state and persistent storage."""
+
+    # Load the current list
+    watchlist = get_watchlist()
+    # Remove if present
+    if symbol in watchlist:
+        watchlist.remove(symbol)
+        # Persist the updated list
+        save_watchlist(watchlist)
+        # Update session state if needed
+        import streamlit as st
+        st.session_state.watchlist = watchlist
