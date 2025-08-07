@@ -4,7 +4,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
-import yfinance as yf
 
 from components.nav import navbar
 
@@ -13,8 +12,7 @@ st.set_page_config(page_title="Performance", layout="wide", initial_sidebar_stat
 
 navbar(Path(__file__).name)
 
-st.header("Performance Dashboard")
-
+st.subheader("Performance Dashboard")
 
 @st.cache_data
 def load_portfolio_history(db_path: str) -> pd.DataFrame:
@@ -30,15 +28,6 @@ def load_portfolio_history(db_path: str) -> pd.DataFrame:
     return df
 
 
-@st.cache_data
-def load_spx(start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
-    """Download and normalize S&P 500 index data."""
-    data = yf.download("^SPX", start=start, end=end + pd.Timedelta(days=1))
-    data = data.reset_index()[["Date", "Close"]]
-    data["SPX_Equity"] = data["Close"] / data["Close"].iloc[0] * 100
-    return data
-
-
 def main() -> None:
     db_path = Path(__file__).resolve().parent.parent / "data" / "trading.db"
     history = load_portfolio_history(str(db_path))
@@ -51,43 +40,60 @@ def main() -> None:
         min_value=min_date,
         max_value=max_date,
     )
-    show_benchmark = st.checkbox("Show S&P 500 benchmark", value=True)
 
     mask = (history["Date"] >= pd.to_datetime(start_date)) & (
         history["Date"] <= pd.to_datetime(end_date)
     )
     hist_filtered = history.loc[mask]
 
-    fig, ax = plt.subplots()
-    ax.plot(
-        hist_filtered["Date"],
-        hist_filtered["Total_Equity"],
-        marker="o",
-        label="Portfolio",
-    )
+    col_chart, col_meta = st.columns([2, 1])
 
-    if show_benchmark:
-        spx = load_spx(pd.to_datetime(start_date), pd.to_datetime(end_date))
-        spx_filtered = spx[
-            (spx["Date"] >= pd.to_datetime(start_date))
-            & (spx["Date"] <= pd.to_datetime(end_date))
-        ]
+    with col_chart:
+        fig, ax = plt.subplots(figsize=(7, 4))
         ax.plot(
-            spx_filtered["Date"], spx_filtered["SPX_Equity"], marker="o", label="S&P 500"
+            hist_filtered["Date"],
+            hist_filtered["Total_Equity"],
+            marker="o",
+            label="Portfolio",
         )
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Equity")
+        ax.grid(True)
+        plt.xticks(rotation=45)
+        st.pyplot(fig, use_container_width=True)
 
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Equity")
-    ax.legend()
-    ax.grid(True)
-    plt.xticks(rotation=45)
+    if hist_filtered.shape[0] < 2:
+        st.warning("Not enough data available for selected date range.")
+        return
 
-    st.pyplot(fig)
+    initial_equity = hist_filtered["Total_Equity"].iloc[0]
+    final_equity = hist_filtered["Total_Equity"].iloc[-1]
+    net_profit = final_equity - initial_equity
+    total_return = (final_equity / initial_equity - 1) * 100
+    daily_returns = hist_filtered["Total_Equity"].pct_change().dropna()
+    avg_daily_return = daily_returns.mean() * 100
+    volatility = daily_returns.std() * 100
+    sharpe_ratio = (
+        (daily_returns.mean() / daily_returns.std()) * (252 ** 0.5)
+        if not daily_returns.empty and daily_returns.std() != 0
+        else 0
+    )
+    roll_max = hist_filtered["Total_Equity"].cummax()
+    drawdown = hist_filtered["Total_Equity"] / roll_max - 1
+    max_drawdown = drawdown.min() * 100
+    num_days = hist_filtered.shape[0]
 
-    total_return = (
-        hist_filtered["Total_Equity"].iloc[-1] / hist_filtered["Total_Equity"].iloc[0] - 1
-    ) * 100
-    st.metric("Total Return", f"{total_return:.2f}%")
+    with col_meta:
+        st.subheader("Performance Summary")
+        st.metric("Total Return (%)", f"{total_return:.2f}%")
+        st.metric("Net Profit ($)", f"${net_profit:,.2f}")
+        st.metric("Initial Equity", f"${initial_equity:,.2f}")
+        st.metric("Final Equity", f"${final_equity:,.2f}")
+        st.metric("Max Drawdown (%)", f"{max_drawdown:.2f}%")
+        st.metric("Number of Trading Days", f"{num_days}")
+        st.metric("Average Daily Return (%)", f"{avg_daily_return:.2f}%")
+        st.metric("Volatility (%)", f"{volatility:.2f}%")
+        st.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
 
 
 if __name__ == "__main__":
