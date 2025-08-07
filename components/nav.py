@@ -22,7 +22,7 @@ def navbar(active_page: str) -> None:
     st.markdown(
         """
         <style>
-            [data-testid="stSidebarNav"] {display: none;}
+            [data-testid="stSidebarNav"] {visibility: hidden;}
             .nav-container {
                 display: flex;
                 gap: 2rem;
