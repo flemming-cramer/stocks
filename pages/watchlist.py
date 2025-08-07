@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 
 import streamlit as st
 
@@ -42,9 +43,16 @@ def watchlist_page():
     st.title("Watchlist")
 
     # Add-ticker input with placeholder
-    new_ticker = st.text_input(
+    # wrap in a narrow column (30% width)
+    input_col, _ = st.columns([3, 7])
+    # persist across reruns using session state
+    if "new_ticker" not in st.session_state:
+        st.session_state["new_ticker"] = ""
+    new_ticker = input_col.text_input(
         "Add ticker to watchlist",
         placeholder="Enter ticker symbol. E.g. AAPL",
+        key="new_ticker",
+        value=st.session_state["new_ticker"],
     )
     if st.button("Add"):
         symbol = new_ticker.strip().upper()
@@ -60,6 +68,8 @@ def watchlist_page():
     # Load current watchlist and prices
     watchlist = get_watchlist()
     prices = load_watchlist_prices(watchlist)
+    last_update = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+    st.caption(f"Last update: {last_update}")
 
     # Render table header
     st.markdown("## Current Watchlist")
