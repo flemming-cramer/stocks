@@ -11,6 +11,8 @@ def show_watchlist_sidebar() -> None:
     """Render ticker lookup and watchlist in the sidebar."""
 
     sidebar = st.sidebar
+    sidebar.caption("Watchlist Tool")
+    sidebar.divider()
     sidebar.header("Ticker Lookup")
     feedback_slot = sidebar.empty()
 
@@ -108,3 +110,4 @@ def show_watchlist_sidebar() -> None:
         kind, text = st.session_state.watchlist_feedback
         getattr(feedback_slot, kind)(text)
         st.session_state.watchlist_feedback = None
+    sidebar.divider()
