@@ -19,26 +19,15 @@ So, starting with just $100, I wanted to answer a simple but powerful question:
 
 - I track and publish performance data weekly on my blog. [SubStack Link](https://nathanbsmith729.substack.com)
 
-  ## Research & Documentation
+## Documentation
 
-- [Research Index](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Experiment%20Details/Deep%20Research%20Index.md)
+Additional project notes, prompts, and disclaimers live in [`docs/experiment_details`](docs/experiment_details).
 
-- [Disclaimer](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Experiment%20Details/Disclaimer.md)
-
-- [Q&A](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Experiment%20Details/Q%26A.md)
-
-- [Prompts](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Experiment%20Details/Prompts.md)
-
-- [Archived "Start Your Own" examples](legacy/start_your_own/README.md)
-
--  [Markdown Research Summaries (MD)](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/tree/main/Weekly%20Deep%20Research%20(MD))
-- [Weekly Deep Research Reports (PDF)](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/tree/main/Weekly%20Deep%20Research%20(PDF))
-  
 # Performance Example (6/30 – 7/25)
 
 ---
 
-![Week 4 Performance](%286-30%20-%207-25%29%20Results.png)
+![Week 4 Performance](docs/results-6-30-7-25.png)
 
 ---
 - Currently stomping on the Russell 2K.
@@ -77,10 +66,7 @@ pip install -r requirements.txt
 
 # Supported Scripts
 
-- `trading_script.py` — core CLI for updating the portfolio and logging trades.
 - `scripts/generate_graph.py` — plot portfolio performance against the S&P 500.
-
-Historical wrapper scripts are kept in the `legacy/` folder for reference.
 
 # Testing and Code Coverage
 
