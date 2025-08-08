@@ -1,6 +1,5 @@
-import pandas as pd
+import math
 import streamlit as st
-import yfinance as yf
 
 from config import COL_TICKER
 from data.watchlist import save_watchlist
@@ -74,15 +73,15 @@ def show_watchlist_sidebar() -> None:
             data = fetch_prices(st.session_state.watchlist)
             updated: dict[str, float | None] = {t: None for t in st.session_state.watchlist}
             if not data.empty:
-                if isinstance(data.columns, pd.MultiIndex):
+                if data.columns.nlevels > 1:
                     close = data["Close"].iloc[-1]
                     for t in st.session_state.watchlist:
                         val = close.get(t)
-                        if val is not None and not pd.isna(val):
+                        if val is not None and not math.isnan(float(val)):
                             updated[t] = float(val)
                 else:
                     val = data["Close"].iloc[-1]
-                    if st.session_state.watchlist and not pd.isna(val):
+                    if st.session_state.watchlist and not math.isnan(float(val)):
                         updated[st.session_state.watchlist[0]] = float(val)
             st.session_state.watchlist_prices.update(updated)
 

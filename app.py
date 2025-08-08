@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import streamlit as st
-from streamlit import config as _config
 
 from components.nav import navbar
 from ui.dashboard import render_dashboard
