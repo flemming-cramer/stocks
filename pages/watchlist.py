@@ -24,7 +24,7 @@ st.markdown(
 from components.nav import navbar
 from services.session import get_watchlist, add_to_watchlist, remove_from_watchlist
 from services.market import fetch_price, fetch_prices
-from ui.forms import LogABuy
+from ui.forms import show_buy_form
 
 
 @st.cache_data(ttl=1800)
@@ -124,7 +124,7 @@ def watchlist_page():
             st.rerun()
         if row_cols[4].button("Buy", key=f"buy_{ticker}"):
             with st.modal(f"Buy {ticker}"):
-                LogABuy(ticker_default=ticker)
+                show_buy_form(ticker_default=ticker)
 
 if __name__ == "__main__":
     watchlist_page()
