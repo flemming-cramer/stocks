@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import types
 
 import pages.watchlist as watchlist
 
