@@ -13,7 +13,8 @@ import pandas as pd
 import yfinance as yf
 from typing import cast
 
-DATA_DIR = Path(__file__).resolve().parent
+# Portfolio CSVs live at the repository root alongside ``trading_script.py``
+DATA_DIR = Path(__file__).resolve().parents[1]
 PORTFOLIO_CSV = DATA_DIR / "chatgpt_portfolio_update.csv"
 
 

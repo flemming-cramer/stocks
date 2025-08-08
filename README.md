@@ -29,7 +29,7 @@ So, starting with just $100, I wanted to answer a simple but powerful question:
 
 - [Prompts](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Experiment%20Details/Prompts.md)
 
-- [Starting Your Own](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/blob/main/Start%20Your%20Own/README.md)
+- [Archived "Start Your Own" examples](legacy/start_your_own/README.md)
 
 -  [Markdown Research Summaries (MD)](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/tree/main/Weekly%20Deep%20Research%20(MD))
 - [Weekly Deep Research Reports (PDF)](https://github.com/LuckyOne7777/ChatGPT-Micro-Cap-Experiment/tree/main/Weekly%20Deep%20Research%20(PDF))
@@ -74,6 +74,13 @@ To run the scripts locally, install the Python dependencies:
 ```
 pip install -r requirements.txt
 ```
+
+# Supported Scripts
+
+- `trading_script.py` — core CLI for updating the portfolio and logging trades.
+- `scripts/generate_graph.py` — plot portfolio performance against the S&P 500.
+
+Historical wrapper scripts are kept in the `legacy/` folder for reference.
 
 # Follow Along
 The experiment runs June 2025 to December 2025.
