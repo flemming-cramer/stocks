@@ -78,31 +78,31 @@ def render_dashboard() -> None:
         header_cols = st.columns([4, 1, 1])
         with header_cols[0]:
             st.subheader("Current Portfolio")
-        with header_cols[2]:
-            auto_refresh = st.checkbox(
-                "Auto-refresh every 30 min",
-                key="auto_refresh",
-                label_visibility="visible",
-            )
 
         if port_table.empty:
             st.info(
                 "Your portfolio is empty. Use the Buy form below to add your first position."
             )
         else:
-            if auto_refresh:
-                try:  # pragma: no cover - optional dependency
-                    from streamlit_autorefresh import st_autorefresh
+            try:  # pragma: no cover - optional dependency
+                from streamlit_autorefresh import st_autorefresh
+                
+                # Refresh every 15 minutes (900,000 milliseconds)
+                st_autorefresh(interval=900_000, key="portfolio_refresh")
+            except ImportError:  # pragma: no cover - import-time failure
+                st.warning(
+                    "Install streamlit-autorefresh for auto refresh support."
+                )
 
-                    st_autorefresh(interval=30 * 60 * 1000, key="portfolio_refresh")
-                except Exception:  # pragma: no cover - import-time failure
-                    st.warning(
-                        "Install streamlit-autorefresh for auto refresh support."
-                    )
+            if not st.session_state.portfolio.empty:
+                # Safely get the timestamp or use current time as fallback
+                if "timestamp" in st.session_state.portfolio.columns:
+                    last_update = st.session_state.portfolio["timestamp"].max()
+                else:
+                    last_update = datetime.now()
 
-            st.caption(
-                f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+                formatted_time = last_update.strftime("%B %d, %Y at %I:%M %p")
+                st.caption(f"Last updated: {formatted_time}")
 
             numeric_cols = [
                 "Shares",

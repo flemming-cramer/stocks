@@ -81,6 +81,7 @@ def show_buy_form(ticker_default: str = "") -> None:
                 st.caption(f"Stop loss price: ${calc_stop:.2f}")
             st.form_submit_button("Submit Buy", on_click=submit_buy)
 
+
 def show_sell_form() -> None:
     """Render and process the sell form inside an expander."""
 
@@ -116,24 +117,31 @@ def show_sell_form() -> None:
             return
 
         # Build options with a placeholder
-        tickers = holdings[COL_TICKER].tolist()
-        options = ["Select a ticker..."] + tickers
+        tickers = ["Select a Ticker"] + sorted(
+            st.session_state.portfolio[COL_TICKER].unique().tolist()
+        )
 
         # Render the selectbox with placeholder default
         selected = st.selectbox(
             "Ticker",
-            options=options,
-            index=0,
-            key="s_ticker",
+            options=tickers,
+            index=0,  # Force default selection to "Select a Ticker"
         )
 
-        # Only proceed if the user picked a real ticker
-        if selected == options[0]:
+        # Only proceed if a real ticker is selected
+        if selected == "Select a Ticker":
             st.warning("Please choose a ticker from your portfolio before selling.")
             return
 
-        # Now that we have a valid ticker, lookup shares & price
-        matching = holdings[holdings[COL_TICKER] == selected]
+        matching = st.session_state.portfolio[
+            st.session_state.portfolio[COL_TICKER] == selected
+        ]
+
+        # Check if matching shares exist before proceeding
+        if matching.empty:
+            st.error(f"No shares found for {selected}")
+            return
+
         max_shares = int(matching.iloc[0][COL_SHARES])
         latest_price = float(matching.iloc[0][COL_PRICE])
         fetched_price = fetch_price(selected)
