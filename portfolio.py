@@ -1,5 +1,3 @@
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import List
 import pandas as pd
 
@@ -14,20 +12,6 @@ PORTFOLIO_COLUMNS: List[str] = [
     "buy_price",
     "cost_basis",
 ]
-
-
-@dataclass
-class PortfolioRecord:
-    """Dataclass representing a single portfolio holding."""
-
-    ticker: str
-    shares: float
-    stop_loss: float
-    buy_price: float
-    cost_basis: float = field(init=False)
-
-    def __post_init__(self) -> None:
-        self.cost_basis = self.shares * self.buy_price
 
 
 def ensure_schema(df: pd.DataFrame) -> pd.DataFrame:
