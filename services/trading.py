@@ -1,4 +1,6 @@
+from datetime import datetime
 import pandas as pd
+import streamlit as st
 
 from config import (
     TODAY,
@@ -172,3 +174,112 @@ def manual_sell(
     save_portfolio_snapshot(portfolio_df, cash)
     msg = f"Sold {shares} shares of {ticker} at ${price:.2f}."
     return True, msg, portfolio_df, cash
+
+
+def execute_buy(trade_data: dict) -> bool:
+    """
+    Execute a buy transaction.
+
+    Args:
+        trade_data: Dictionary containing 'ticker', 'shares', and 'price'
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        total_cost = trade_data["shares"] * trade_data["price"]
+
+        # Verify sufficient funds
+        if total_cost > st.session_state.cash:
+            st.error("Insufficient funds for purchase")
+            return False
+
+        # Update cash balance
+        st.session_state.cash -= total_cost
+
+        # Add to portfolio
+        new_position = pd.DataFrame(
+            {
+                "Ticker": [trade_data["ticker"]],
+                "Shares": [trade_data["shares"]],
+                "Price": [trade_data["price"]],
+                "Date": [datetime.now()],
+            }
+        )
+
+        if st.session_state.portfolio.empty:
+            st.session_state.portfolio = new_position
+        else:
+            st.session_state.portfolio = pd.concat(
+                [st.session_state.portfolio, new_position]
+            )
+
+        return True
+
+    except Exception as e:
+        st.error(f"Error executing buy: {str(e)}")
+        return False
+
+
+def execute_sell(trade_data: dict) -> bool:
+    """
+    Execute a sell transaction.
+
+    Args:
+        trade_data: Dictionary containing 'ticker', 'shares', and 'price'
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Verify sufficient shares
+        matching = st.session_state.portfolio[
+            st.session_state.portfolio["Ticker"] == trade_data["ticker"]
+        ]
+
+        if matching.empty or matching.iloc[0]["Shares"] < trade_data["shares"]:
+            st.error("Insufficient shares for sale")
+            return False
+
+        # Update portfolio
+        current_shares = matching.iloc[0]["Shares"]
+        remaining_shares = current_shares - trade_data["shares"]
+
+        if remaining_shares == 0:
+            st.session_state.portfolio = st.session_state.portfolio[
+                st.session_state.portfolio["Ticker"] != trade_data["ticker"]
+            ]
+        else:
+            st.session_state.portfolio.loc[
+                st.session_state.portfolio["Ticker"] == trade_data["ticker"], "Shares"
+            ] = remaining_shares
+
+        # Update cash balance
+        proceeds = trade_data["shares"] * trade_data["price"]
+        st.session_state.cash += proceeds
+
+        return True
+
+    except Exception as e:
+        st.error(f"Error executing sell: {str(e)}")
+        return False
+
+
+def validate_trade(trade_data: dict) -> bool:
+    """
+    Validate trade data.
+
+    Args:
+        trade_data: Dictionary containing trade information
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    required_fields = ["ticker", "shares", "price"]
+    if not all(field in trade_data for field in required_fields):
+        return False
+
+    try:
+        shares = float(trade_data["shares"])
+        price = float(trade_data["price"])
+
+        return shares > 0 and price > 0
+    except (ValueError, TypeError):
+        return False

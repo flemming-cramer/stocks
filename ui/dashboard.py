@@ -260,3 +260,14 @@ def render_dashboard() -> None:
             st.subheader("Error Log")
             for line in st.session_state.error_log:
                 st.text(line)
+
+def format_currency(value: float) -> str:
+    """Format a number as currency with dollar sign and 2 decimal places."""
+    is_negative = value < 0
+    abs_value = abs(value)
+    formatted = f"${abs_value:,.2f}"
+    return f"-{formatted}" if is_negative else formatted
+
+def format_percentage(value: float) -> str:
+    """Format a decimal as percentage with 2 decimal places."""
+    return f"{value * 100:.2f}%"

@@ -1,8 +1,78 @@
 import streamlit as st
+import pandas as pd
 
 from config import COL_TICKER, COL_SHARES, COL_PRICE
 from services.market import fetch_price
 from services.trading import manual_buy, manual_sell
+
+
+def validate_buy_form(data: dict) -> bool:
+    """
+    Validate buy form data.
+    Returns True if valid, False otherwise.
+    """
+    if not data.get("ticker"):
+        st.error("Ticker symbol is required")
+        return False
+
+    try:
+        shares = float(data.get("shares", 0))
+        price = float(data.get("price", 0))
+
+        if shares <= 0:
+            st.error("Number of shares must be positive")
+            return False
+
+        if price <= 0:
+            st.error("Price must be positive")
+            return False
+
+        # Check if we have enough cash
+        total_cost = shares * price
+        if total_cost > st.session_state.cash:
+            st.error("Insufficient funds for this purchase")
+            return False
+
+        return True
+
+    except ValueError:
+        st.error("Invalid number format")
+        return False
+
+
+def validate_sell_form(data: dict) -> bool:
+    """
+    Validate sell form data.
+    Returns True if valid, False otherwise.
+    """
+    if not data.get("ticker"):
+        st.error("Ticker symbol is required")
+        return False
+
+    try:
+        shares = float(data.get("shares", 0))
+        price = float(data.get("price", 0))
+
+        if shares <= 0:
+            st.error("Number of shares must be positive")
+            return False
+
+        if price <= 0:
+            st.error("Price must be positive")
+            return False
+
+        # Check if we have enough shares
+        portfolio = st.session_state.portfolio
+        matching = portfolio[portfolio["Ticker"] == data["ticker"]]
+        if matching.empty or matching.iloc[0]["Shares"] < shares:
+            st.error("Insufficient shares for this sale")
+            return False
+
+        return True
+
+    except ValueError:
+        st.error("Invalid number format")
+        return False
 
 
 def show_buy_form(ticker_default: str = "") -> None:

@@ -63,3 +63,24 @@ def test_highlight_stop():
     
     assert all(s == 'background-color: #ffcdd2' for s in highlight_stop(row_breach))
     assert all(s == '' for s in highlight_stop(row_ok))
+
+def test_highlight_stop_with_missing_data():
+    """Test stop loss highlighting with missing data."""
+    row = pd.Series({
+        'Current Price': 100.0
+        # Missing Stop Loss
+    })
+    result = highlight_stop(row)
+    assert all(s == '' for s in result)
+
+def test_calculate_kpis_single_day():
+    """Test KPI calculations with single day of data."""
+    data = {
+        'date': [pd.Timestamp('2025-01-01')],
+        'ticker': ['TOTAL'],
+        'total_equity': [100.0]
+    }
+    df = pd.DataFrame(data)
+    kpis = calculate_kpis(df)
+    assert kpis['total_return'] == 0.0
+    assert kpis['max_drawdown'] == 0.0

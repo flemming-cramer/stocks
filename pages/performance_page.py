@@ -95,10 +95,12 @@ def calculate_kpis(hist_filtered: pd.DataFrame) -> dict:
             'num_days': 0
         }
     
-    # Sort by date to ensure proper calculations
+    # Sort and forward-fill missing values
     portfolio_data = portfolio_data.sort_values('date')
+    portfolio_data['total_equity'] = portfolio_data['total_equity'].ffill()
+    portfolio_data['daily_return'] = portfolio_data['total_equity'].pct_change(fill_method=None)
     
-    # Calculate KPIs
+    # Calculate metrics
     initial_equity = float(portfolio_data['total_equity'].iloc[0])
     final_equity = float(portfolio_data['total_equity'].iloc[-1])
     net_profit = final_equity - initial_equity
@@ -106,8 +108,6 @@ def calculate_kpis(hist_filtered: pd.DataFrame) -> dict:
     # Avoid division by zero
     total_return = ((final_equity / initial_equity - 1) * 100) if initial_equity > 0 else 0.0
     
-    # Calculate daily returns
-    portfolio_data['daily_return'] = portfolio_data['total_equity'].pct_change()
     avg_daily_return = portfolio_data['daily_return'].mean() * 100
     
     # Calculate maximum drawdown
