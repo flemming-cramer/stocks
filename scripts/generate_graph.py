@@ -6,6 +6,7 @@ is simply reorganised and commented for clarity.
 """
 
 import argparse
+import logging
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -97,15 +98,13 @@ def main(
         end_date = max_portfolio
 
     if start_date < min_portfolio:
-        print(
-            "Start date before portfolio history; using",
-            min_portfolio.date(),
+        logging.getLogger(__name__).info(
+            "Start date before portfolio history; using %s", min_portfolio.date()
         )
         start_date = min_portfolio
     if end_date > max_portfolio:
-        print(
-            "End date after portfolio history; using",
-            max_portfolio.date(),
+        logging.getLogger(__name__).info(
+            "End date after portfolio history; using %s", max_portfolio.date()
         )
         end_date = max_portfolio
     if start_date > end_date:
@@ -172,6 +171,7 @@ if __name__ == "__main__":
         help="End date for the chart (YYYY-MM-DD)",
     )
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
 
     start = parse_date(args.start_date, "start date") if args.start_date else None
     end = parse_date(args.end_date, "end date") if args.end_date else None

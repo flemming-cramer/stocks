@@ -1,4 +1,5 @@
 """Migration script to import existing CSV data into the SQLite database."""
+import logging
 import pandas as pd
 
 from config import (
@@ -59,4 +60,5 @@ def migrate() -> None:
 
 if __name__ == "__main__":
     migrate()
-    print("Migration complete.")
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger(__name__).info("Migration complete.")
