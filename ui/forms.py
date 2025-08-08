@@ -1,6 +1,7 @@
 import streamlit as st
 
 from config import COL_TICKER, COL_SHARES, COL_PRICE
+from services.market import fetch_price
 from services.trading import manual_buy, manual_sell
 
 
@@ -135,6 +136,8 @@ def show_sell_form() -> None:
         matching = holdings[holdings[COL_TICKER] == selected]
         max_shares = int(matching.iloc[0][COL_SHARES])
         latest_price = float(matching.iloc[0][COL_PRICE])
+        fetched_price = fetch_price(selected)
+        price_default = fetched_price if fetched_price is not None else latest_price
 
         # Determine min/default values
         share_min = 1 if max_shares > 0 else 0
@@ -157,7 +160,7 @@ def show_sell_form() -> None:
             st.number_input(
                 "Price",
                 min_value=0.0,
-                value=latest_price,
+                value=price_default,
                 step=0.01,
                 format="%.2f",
                 key="s_price",
