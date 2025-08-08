@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-import pages.watchlist as watchlist
+import services.watchlist_service as watchlist
 
 
 def _clear_cache():

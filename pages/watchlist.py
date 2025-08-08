@@ -1,6 +1,5 @@
 from pathlib import Path
 from datetime import datetime
-import math
 
 import streamlit as st
 
@@ -22,42 +21,14 @@ st.markdown(
 )
 
 from components.nav import navbar
-from services.session import get_watchlist, add_to_watchlist, remove_from_watchlist
-from services.market import fetch_price, fetch_prices
+from services.watchlist_service import (
+    get_watchlist,
+    add_to_watchlist,
+    remove_from_watchlist,
+    load_watchlist_prices,
+)
+from services.market import fetch_price
 from ui.forms import show_buy_form
-
-
-@st.cache_data(ttl=1800)
-def load_watchlist_prices(tickers: list[str]) -> dict[str, float]:
-    data = fetch_prices(tickers)
-    prices: dict[str, float] = {}
-    if data.empty:
-        return prices
-
-    if data.columns.nlevels > 1:
-        close = data["Close"].iloc[-1]
-        for t in tickers:
-            val = close.get(t)
-            if val is None:
-                continue
-            try:
-                price = float(val)
-            except (TypeError, ValueError):
-                continue
-            if not math.isnan(price):
-                prices[t] = price
-    else:
-        if tickers:
-            val = data["Close"].iloc[-1]
-            try:
-                price = float(val)
-            except (TypeError, ValueError):
-                pass
-            else:
-                if not math.isnan(price):
-                    prices[tickers[0]] = price
-
-    return prices
 
 
 def watchlist_page():

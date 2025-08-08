@@ -1,9 +1,12 @@
-import math
 import streamlit as st
 
 from config import COL_TICKER
-from data.watchlist import save_watchlist
-from services.market import fetch_price, fetch_prices
+from services.market import fetch_price
+from services.watchlist_service import (
+    add_to_watchlist,
+    remove_from_watchlist,
+    load_watchlist_prices,
+)
 
 
 def show_watchlist_sidebar() -> None:
@@ -23,9 +26,8 @@ def show_watchlist_sidebar() -> None:
         elif sym in portfolio_tickers:
             st.session_state.watchlist_feedback = ("info", f"{sym} already in portfolio.")
         else:
-            st.session_state.watchlist.append(sym)
+            add_to_watchlist(sym)
             st.session_state.watchlist_prices[sym] = price
-            save_watchlist(st.session_state.watchlist)
             st.session_state.watchlist_feedback = ("success", f"{sym} added to watchlist.")
 
     portfolio_tickers = (
@@ -35,10 +37,9 @@ def show_watchlist_sidebar() -> None:
     )
     removed = [t for t in st.session_state.watchlist if t in portfolio_tickers]
     if removed:
-        st.session_state.watchlist = [t for t in st.session_state.watchlist if t not in removed]
         for t in removed:
+            remove_from_watchlist(t)
             st.session_state.watchlist_prices.pop(t, None)
-        save_watchlist(st.session_state.watchlist)
         st.session_state.watchlist_feedback = (
             "info",
             f"Removed {', '.join(removed)} from watchlist (now in portfolio).",
@@ -70,20 +71,10 @@ def show_watchlist_sidebar() -> None:
         hcol1, hcol2 = header.columns([4, 1])
         hcol1.subheader("Watchlist")
         if hcol2.button("🔄", key="refresh_watchlist", help="Refresh prices"):
-            data = fetch_prices(st.session_state.watchlist)
-            updated: dict[str, float | None] = {t: None for t in st.session_state.watchlist}
-            if not data.empty:
-                if data.columns.nlevels > 1:
-                    close = data["Close"].iloc[-1]
-                    for t in st.session_state.watchlist:
-                        val = close.get(t)
-                        if val is not None and not math.isnan(float(val)):
-                            updated[t] = float(val)
-                else:
-                    val = data["Close"].iloc[-1]
-                    if st.session_state.watchlist and not math.isnan(float(val)):
-                        updated[st.session_state.watchlist[0]] = float(val)
-            st.session_state.watchlist_prices.update(updated)
+            prices = load_watchlist_prices(st.session_state.watchlist)
+            st.session_state.watchlist_prices.update(
+                {t: prices.get(t) for t in st.session_state.watchlist}
+            )
 
         for t in sorted(list(st.session_state.watchlist)):
             price = st.session_state.watchlist_prices.get(t)
@@ -95,9 +86,8 @@ def show_watchlist_sidebar() -> None:
                 unsafe_allow_html=True,
             )
             if col2.button("🗑️", key=f"rm_{t}", help=f"Remove {t}"):
-                st.session_state.watchlist.remove(t)
+                remove_from_watchlist(t)
                 st.session_state.watchlist_prices.pop(t, None)
-                save_watchlist(st.session_state.watchlist)
                 st.session_state.watchlist_feedback = (
                     "info",
                     f"Removed {t} from watchlist.",
