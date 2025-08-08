@@ -6,10 +6,6 @@ This example script is archived and kept for reference only.
 """
 
 from pathlib import Path
-import sys
-
-# Allow importing the shared module from the repository root
-sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from trading_script import main
 

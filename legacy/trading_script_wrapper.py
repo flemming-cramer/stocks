@@ -4,10 +4,6 @@ This file is retained for historical reference and is no longer maintained.
 """
 
 from pathlib import Path
-import sys
-
-# Allow importing the shared module from the repository root
-sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from trading_script import main
 
