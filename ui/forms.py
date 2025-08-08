@@ -105,18 +105,18 @@ def show_sell_form() -> None:
 
         # Build options with a placeholder
         tickers = holdings[COL_TICKER].tolist()
-        options = tickers
+        options = ["Select a ticker..."] + tickers
 
         # Render the selectbox with placeholder default
         selected = st.selectbox(
             "Ticker",
             options=options,
-            index=0,     # show placeholder first
+            index=0,
             key="s_ticker",
         )
 
-         # Only proceed if the user picked a real ticker
-        if selected not in tickers:
+        # Only proceed if the user picked a real ticker
+        if selected == options[0]:
             st.warning("Please choose a ticker from your portfolio before selling.")
             return
 
