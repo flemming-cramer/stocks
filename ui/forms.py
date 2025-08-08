@@ -4,8 +4,14 @@ from config import COL_TICKER, COL_SHARES, COL_PRICE
 from services.trading import manual_buy, manual_sell
 
 
-def show_buy_form() -> None:
-    """Render and process the buy form inside an expander."""
+def show_buy_form(ticker_default: str = "") -> None:
+    """Render and process the buy form inside an expander.
+
+    Parameters
+    ----------
+    ticker_default: str, optional
+        When provided, pre-populates the ticker input with this value.
+    """
 
     def submit_buy() -> None:
         if st.session_state.b_shares <= 0 or st.session_state.b_price <= 0:
@@ -37,7 +43,12 @@ def show_buy_form() -> None:
 
     with st.expander("Log a Buy"):
         with st.form("buy_form", clear_on_submit=True):
-            st.text_input("Ticker", key="b_ticker", placeholder="e.g. AAPL")
+            st.text_input(
+                "Ticker",
+                key="b_ticker",
+                placeholder="e.g. AAPL",
+                value=ticker_default,
+            )
             st.number_input(
                 "Shares",
                 min_value=1,
@@ -152,8 +163,5 @@ def show_sell_form() -> None:
                 key="s_price",
             )
             st.form_submit_button("Submit Sell", on_click=submit_sell)
-
-
-LogABuy = show_buy_form
 
 
