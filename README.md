@@ -82,6 +82,22 @@ pip install -r requirements.txt
 
 Historical wrapper scripts are kept in the `legacy/` folder for reference.
 
+# Testing and Code Coverage
+
+Unit tests live in the `tests/` directory. A helper script `scripts/run_tests_with_coverage.py` runs the suite and enforces a default 95% coverage threshold.
+
+```
+python scripts/run_tests_with_coverage.py
+```
+
+To view coverage without failing on the current percentage, supply a lower minimum:
+
+```
+python scripts/run_tests_with_coverage.py --min 0
+```
+
+Additional tests should be added until the 95% requirement is met.
+
 # Follow Along
 The experiment runs June 2025 to December 2025.
 Every trading day I will update the portfolio CSV file.
