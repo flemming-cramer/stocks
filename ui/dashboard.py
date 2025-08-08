@@ -1,6 +1,7 @@
 from datetime import datetime
 import pandas as pd
 import streamlit as st
+import numpy as np
 
 from data.portfolio import save_portfolio_snapshot
 from services.session import init_session_state
@@ -10,8 +11,63 @@ from ui.forms import show_buy_form, show_sell_form
 from ui.summary import build_daily_summary
 
 
+def fmt_currency(val: float) -> str:
+    """Format value as currency."""
+    try:
+        val = float(val)
+        return f"${val:,.2f}" if val >= 0 else f"-${abs(val):,.2f}"
+    except (ValueError, TypeError):
+        return ''
+
+def fmt_percent(val: float) -> str:
+    """Format value as percentage with arrow."""
+    try:
+        val = float(val)
+        if val > 0:
+            return f"+{val:.1f}% ↑"
+        elif val < 0:
+            return f"{val:.1f}% ↓"
+        return f"{val:.1f}%"
+    except (ValueError, TypeError):
+        return ''
+
+def fmt_shares(val: float) -> str:
+    """Format share count."""
+    try:
+        return f"{int(float(val)):,}"
+    except (ValueError, TypeError):
+        return ''
+
+def color_pnl(val: float) -> str:
+    """Color formatting for P&L values."""
+    try:
+        val = float(val)
+        if val > 0:
+            return 'color: green'
+        elif val < 0:
+            return 'color: red'
+        return ''
+    except (ValueError, TypeError):
+        return ''
+
+def highlight_stop(row: pd.Series) -> list:
+    """Highlight row if price is below stop loss."""
+    try:
+        return ['background-color: #ffcccc' if row['Current Price'] < row['Stop Loss'] 
+                else '' for _ in range(len(row))]
+    except (KeyError, TypeError):
+        return [''] * len(row)
+
+def highlight_pct(row: pd.Series) -> list:
+    """Highlight percentage changes."""
+    try:
+        return ['color: green' if val > 0 else 'color: red' if val < 0 
+                else '' for val in row]
+    except (TypeError, ValueError):
+        return [''] * len(row)
+
 def render_dashboard() -> None:
-    """Render the main dashboard tab."""
+    """Render the main dashboard view."""
 
     init_session_state()
 
@@ -139,48 +195,6 @@ def render_dashboard() -> None:
                 if col in port_table:
                     port_table[col] = pd.to_numeric(port_table[col], errors="coerce")
 
-            def highlight_stop(row: pd.Series) -> list[str]:
-                stop = row.get("Stop Loss")
-                price = row.get("Current Price")
-                if pd.isna(stop) or pd.isna(price):
-                    return [""] * len(row)
-                color = "#ffcccc" if price <= stop else ""
-                return [f"background-color: {color}"] * len(row)
-
-            def highlight_pct(val: float) -> str:
-                if pd.isna(val):
-                    return ""
-                color = "green" if val > 0 else "red" if val < 0 else ""
-                return f"color: {color}"
-
-            def color_pnl(val: float) -> str:
-                if pd.isna(val):
-                    return ""
-                color = "green" if val > 0 else "red" if val < 0 else ""
-                return f"color: {color}"
-
-            def fmt_currency(x):
-                try:
-                    v = float(x)
-                    return f"${v:,.2f}"
-                except Exception:
-                    return ""
-
-            def fmt_percent(x):
-                try:
-                    v = float(x)
-                    sign = "+" if v > 0 else ""
-                    arrow = "\u2191" if v > 0 else ("\u2193" if v < 0 else "")
-                    return f"{sign}{v:.1f}% {arrow}".strip()
-                except Exception:
-                    return ""
-
-            def fmt_shares(x):
-                try:
-                    return f"{int(float(x)):,}"
-                except Exception:
-                    return ""
-
             formatters = {}
             if "Shares" in port_table:
                 formatters["Shares"] = fmt_shares
@@ -262,12 +276,92 @@ def render_dashboard() -> None:
                 st.text(line)
 
 def format_currency(value: float) -> str:
-    """Format a number as currency with dollar sign and 2 decimal places."""
+    """Format a number as currency."""
     is_negative = value < 0
     abs_value = abs(value)
     formatted = f"${abs_value:,.2f}"
     return f"-{formatted}" if is_negative else formatted
 
 def format_percentage(value: float) -> str:
-    """Format a decimal as percentage with 2 decimal places."""
+    """Format a number as percentage."""
     return f"{value * 100:.2f}%"
+
+def show_portfolio_summary() -> None:
+    """Display portfolio summary metrics."""
+    if not hasattr(st.session_state, 'portfolio') or st.session_state.portfolio.empty:
+        return
+        
+    portfolio = st.session_state.portfolio
+    
+    # Calculate market value if it doesn't exist
+    if 'Market Value' not in portfolio.columns:
+        portfolio['Market Value'] = portfolio['shares'] * portfolio['price']
+    
+    # Calculate cost basis if it doesn't exist
+    if 'Cost Basis' not in portfolio.columns:
+        portfolio['Cost Basis'] = portfolio['shares'] * portfolio['buy_price']
+    
+    total_value = portfolio['Market Value'].sum()
+    total_cost = portfolio['Cost Basis'].sum()
+    total_gain = total_value - total_cost
+    total_return = (total_gain / total_cost) if total_cost > 0 else 0
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Value", fmt_currency(total_value))
+    with col2:
+        st.metric("Total Gain/Loss", fmt_currency(total_gain))
+    with col3:
+        st.metric("Total Return", fmt_percent(total_return))
+
+def show_holdings_table() -> None:
+    """Display holdings table with formatting."""
+    if not hasattr(st.session_state, 'portfolio') or st.session_state.portfolio.empty:
+        st.info("No holdings to display")
+        return
+        
+    # Format the display DataFrame
+    display_df = st.session_state.portfolio.copy()
+    st.dataframe(display_df)
+
+def show_performance_metrics(metrics: dict) -> None:
+    """Display performance metrics in columns."""
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Portfolio Value", fmt_currency(metrics.get('total_value', 0)))
+    with col2:
+        st.metric("Total Gain/Loss", fmt_currency(metrics.get('total_gain', 0)))
+    with col3:
+        st.metric("Total Return", fmt_percent(metrics.get('total_return', 0)))
+
+def highlight_stop(row: pd.Series) -> list:
+    """Highlight row if price is below stop loss."""
+    if 'Current Price' not in row or 'Stop Loss' not in row:
+        return [''] * len(row)
+    return ['background-color: #ffcccc' if row['Current Price'] < row['Stop Loss'] else '' for _ in row]
+
+def highlight_pct(row: pd.Series) -> list:
+    """Highlight percentage changes."""
+    try:
+        return ['color: green' if val > 0 else 'color: red' if val < 0 else '' for val in row]
+    except TypeError:
+        return [''] * len(row)
+
+def render_dashboard() -> None:
+    """Render the main dashboard."""
+    if not hasattr(st.session_state, 'portfolio'):
+        st.session_state.portfolio = pd.DataFrame(
+            columns=['Ticker', 'Shares', 'Current Price', 'Market Value', 'Cost Basis']
+        )
+    
+    if st.session_state.portfolio.empty:
+        st.info("Your portfolio is empty. Use the Buy form below to add your first position.")
+        return
+    
+    # Show portfolio summary
+    show_portfolio_summary()
+    
+    # Show holdings table
+    st.subheader("Current Holdings")
+    show_holdings_table()

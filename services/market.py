@@ -41,3 +41,22 @@ def get_day_high_low(ticker: str) -> tuple[float, float]:
     if data.empty:
         raise ValueError("No market data available.")
     return float(data["High"].iloc[-1]), float(data["Low"].iloc[-1])
+
+
+def get_current_price(ticker: str) -> float:
+    """Get current price for a ticker."""
+    try:
+        data = yf.download(
+            ticker,
+            period="1d",
+            progress=False,
+            auto_adjust=True,  # Explicitly set auto_adjust
+        )
+
+        if not data.empty:
+            # Use iloc[0] instead of direct float conversion
+            return float(data["Close"].iloc[0])
+        return None
+    except Exception as e:
+        logger.error(f"Error getting price for {ticker}: {e}")
+        return None

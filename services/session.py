@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from config import WATCHLIST_FILE
 from data.portfolio import load_portfolio
@@ -28,10 +29,22 @@ def init_session_state() -> None:
         st.session_state.setdefault(key, default)
 
     if "portfolio" not in st.session_state:
-        port, cash, needs_cash = load_portfolio()
-        st.session_state.portfolio = port
-        st.session_state.cash = cash
-        st.session_state.needs_cash = needs_cash
+        st.session_state.portfolio = pd.DataFrame(columns=[
+            'ticker',
+            'shares',
+            'price',
+            'buy_price',
+            'Market Value',  # Added required columns
+            'Cost Basis',
+            'stop_loss',
+            'Return %'
+        ])
+
+    if "cash" not in st.session_state:
+        st.session_state.cash = 0.0
+
+    if "needs_cash" not in st.session_state:
+        st.session_state.needs_cash = True
 
     if not st.session_state.watchlist and WATCHLIST_FILE.exists():
         st.session_state.watchlist = load_watchlist()

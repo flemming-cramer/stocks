@@ -7,35 +7,32 @@ from services.trading import manual_buy, manual_sell
 
 
 def validate_buy_form(data: dict) -> bool:
-    """
-    Validate buy form data.
-    Returns True if valid, False otherwise.
-    """
-    if not data.get("ticker"):
-        st.error("Ticker symbol is required")
-        return False
-
+    """Validate buy form data."""
     try:
+        # Check required fields
+        if not data.get("ticker"):
+            st.error("Ticker symbol is required")
+            return False
+
         shares = float(data.get("shares", 0))
         price = float(data.get("price", 0))
-
+        
         if shares <= 0:
             st.error("Number of shares must be positive")
             return False
-
+            
         if price <= 0:
             st.error("Price must be positive")
             return False
 
-        # Check if we have enough cash
         total_cost = shares * price
         if total_cost > st.session_state.cash:
-            st.error("Insufficient funds for this purchase")
+            st.error("Insufficient funds for purchase")
             return False
 
         return True
 
-    except ValueError:
+    except (ValueError, TypeError):
         st.error("Invalid number format")
         return False
 
