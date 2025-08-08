@@ -14,7 +14,7 @@ import pandas as pd
 import yfinance as yf
 from typing import cast
 
-# Portfolio CSVs live at the repository root alongside ``trading_script.py``
+# Portfolio CSV lives at the repository root
 DATA_DIR = Path(__file__).resolve().parents[1]
 PORTFOLIO_CSV = DATA_DIR / "chatgpt_portfolio_update.csv"
 
@@ -45,10 +45,7 @@ def load_portfolio_details(
     """
 
     if not PORTFOLIO_CSV.exists():
-        msg = (
-            f"Portfolio file '{PORTFOLIO_CSV}' not found. Run Trading_Script.py "
-            "to generate it."
-        )
+        msg = f"Portfolio file '{PORTFOLIO_CSV}' not found."
         raise SystemExit(msg)
 
     chatgpt_df = pd.read_csv(PORTFOLIO_CSV)
