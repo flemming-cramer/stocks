@@ -1,4 +1,7 @@
-"""Wrapper for the shared trading script using local data directory."""
+"""Wrapper for the shared trading script using a legacy data directory.
+
+This file is retained for historical reference and is no longer maintained.
+"""
 
 from pathlib import Path
 import sys

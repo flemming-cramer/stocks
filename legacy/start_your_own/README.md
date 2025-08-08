@@ -1,6 +1,7 @@
-# Start Your Own
+# Start Your Own (Archived)
 
-This folder lets you run the trading experiment on your own computer. It contains two small scripts and the CSV files they produce.
+These scripts are preserved for historical reference and are no longer maintained.
+The folder lets you run the trading experiment on your own computer. It contains two small scripts and the CSV files they produce.
 
 Run the commands below from the repository root. The scripts automatically
 save their CSV data inside this folder.

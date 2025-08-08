@@ -1,6 +1,9 @@
 # Improved user prompts and guidance for manual trades and daily summaries
 # (2025-08-04 usability update)
-"""Wrapper for the shared trading script using local data directory."""
+"""Wrapper for the shared trading script using a local data directory.
+
+This example script is archived and kept for reference only.
+"""
 
 from pathlib import Path
 import sys

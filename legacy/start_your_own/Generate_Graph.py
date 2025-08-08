@@ -1,5 +1,8 @@
 """Plot ChatGPT portfolio performance against the S&P 500.
 
+Archived example script from early versions of the project. It is kept
+for reference and is no longer maintained.
+
 The script loads logged portfolio equity, fetches S&P 500 data, and
 renders a comparison chart. Core behaviour remains unchanged; the code
 is simply reorganised and commented for clarity.
