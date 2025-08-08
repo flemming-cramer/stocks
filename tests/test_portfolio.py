@@ -1,9 +1,4 @@
-from pathlib import Path
-import sys
-
 import pandas as pd
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 from portfolio import ensure_schema, PORTFOLIO_COLUMNS
 
 
