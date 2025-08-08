@@ -64,5 +64,4 @@ def remove_from_watchlist(symbol: str) -> None:
         # Persist the updated list
         save_watchlist(watchlist)
         # Update session state if needed
-        import streamlit as st
         st.session_state.watchlist = watchlist
