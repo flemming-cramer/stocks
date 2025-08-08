@@ -1,6 +1,10 @@
 import json
+import logging
 
 from config import WATCHLIST_FILE
+
+
+logger = logging.getLogger(__name__)
 
 
 def load_watchlist() -> list[str]:
@@ -11,7 +15,7 @@ def load_watchlist() -> list[str]:
             data = json.loads(WATCHLIST_FILE.read_text())
             return [str(t).upper() for t in data if isinstance(t, str)]
         except Exception:
-            pass
+            logger.exception("Failed to load watchlist")
     return []
 
 
@@ -21,4 +25,4 @@ def save_watchlist(tickers: list[str]) -> None:
     try:
         WATCHLIST_FILE.write_text(json.dumps(tickers))
     except Exception:
-        pass
+        logger.exception("Failed to save watchlist")
