@@ -62,5 +62,5 @@ def get_current_price(ticker: str) -> float:
         return float(close_price)
         
     except Exception as e:
-        logger.error(f"Error getting price for {ticker}: {e}")
+        log_error(f"Error getting price for {ticker}: {e}")
         return None

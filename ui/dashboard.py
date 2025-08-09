@@ -9,6 +9,9 @@ from ui.watchlist import show_watchlist_sidebar
 from ui.cash import show_cash_section
 from ui.forms import show_buy_form, show_sell_form
 from ui.summary import build_daily_summary
+from services.portfolio_manager import PortfolioManager
+from services.core.portfolio_service import PortfolioService
+from services.core.market_service import MarketService
 
 
 def fmt_currency(val: float) -> str:
@@ -65,6 +68,13 @@ def highlight_pct(row: pd.Series) -> list:
                 else '' for val in row]
     except (TypeError, ValueError):
         return [''] * len(row)
+
+def initialize_services():
+    """Initialize services in session state."""
+    if 'portfolio_service' not in st.session_state:
+        st.session_state.portfolio_service = PortfolioService()
+    if 'market_service' not in st.session_state:
+        st.session_state.market_service = MarketService()
 
 def render_dashboard() -> None:
     """Render the main dashboard view."""
@@ -288,80 +298,24 @@ def format_percentage(value: float) -> str:
 
 def show_portfolio_summary() -> None:
     """Display portfolio summary metrics."""
-    if not hasattr(st.session_state, 'portfolio') or st.session_state.portfolio.empty:
-        return
-        
-    portfolio = st.session_state.portfolio
-    
-    # Calculate market value if it doesn't exist
-    if 'Market Value' not in portfolio.columns:
-        portfolio['Market Value'] = portfolio['shares'] * portfolio['price']
-    
-    # Calculate cost basis if it doesn't exist
-    if 'Cost Basis' not in portfolio.columns:
-        portfolio['Cost Basis'] = portfolio['shares'] * portfolio['buy_price']
-    
-    total_value = portfolio['Market Value'].sum()
-    total_cost = portfolio['Cost Basis'].sum()
-    total_gain = total_value - total_cost
-    total_return = (total_gain / total_cost) if total_cost > 0 else 0
+    initialize_services()
+    metrics = st.session_state.portfolio_service.get_metrics()
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Value", fmt_currency(total_value))
+        st.metric("Total Value", f"${metrics.total_value:,.2f}")
     with col2:
-        st.metric("Total Gain/Loss", fmt_currency(total_gain))
+        st.metric("Total Gain/Loss", f"${metrics.total_gain:,.2f}")
     with col3:
-        st.metric("Total Return", fmt_percent(total_return))
+        st.metric("Total Return", f"{metrics.total_return:.1%}")
 
 def show_holdings_table() -> None:
-    """Display holdings table with formatting."""
-    if not hasattr(st.session_state, 'portfolio') or st.session_state.portfolio.empty:
+    """Display holdings table."""
+    initialize_services()
+    df = st.session_state.portfolio_service.to_dataframe()
+    
+    if df.empty:
         st.info("No holdings to display")
         return
         
-    # Format the display DataFrame
-    display_df = st.session_state.portfolio.copy()
-    st.dataframe(display_df)
-
-def show_performance_metrics(metrics: dict) -> None:
-    """Display performance metrics in columns."""
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Portfolio Value", fmt_currency(metrics.get('total_value', 0)))
-    with col2:
-        st.metric("Total Gain/Loss", fmt_currency(metrics.get('total_gain', 0)))
-    with col3:
-        st.metric("Total Return", fmt_percent(metrics.get('total_return', 0)))
-
-def highlight_stop(row: pd.Series) -> list:
-    """Highlight row if price is below stop loss."""
-    if 'Current Price' not in row or 'Stop Loss' not in row:
-        return [''] * len(row)
-    return ['background-color: #ffcccc' if row['Current Price'] < row['Stop Loss'] else '' for _ in row]
-
-def highlight_pct(row: pd.Series) -> list:
-    """Highlight percentage changes."""
-    try:
-        return ['color: green' if val > 0 else 'color: red' if val < 0 else '' for val in row]
-    except TypeError:
-        return [''] * len(row)
-
-def render_dashboard() -> None:
-    """Render the main dashboard."""
-    if not hasattr(st.session_state, 'portfolio'):
-        st.session_state.portfolio = pd.DataFrame(
-            columns=['Ticker', 'Shares', 'Current Price', 'Market Value', 'Cost Basis']
-        )
-    
-    if st.session_state.portfolio.empty:
-        st.info("Your portfolio is empty. Use the Buy form below to add your first position.")
-        return
-    
-    # Show portfolio summary
-    show_portfolio_summary()
-    
-    # Show holdings table
-    st.subheader("Current Holdings")
-    show_holdings_table()
+    st.dataframe(df)

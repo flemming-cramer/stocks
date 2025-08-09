@@ -4,6 +4,8 @@ import pandas as pd
 from config import COL_TICKER, COL_SHARES, COL_PRICE
 from services.market import fetch_price
 from services.trading import manual_buy, manual_sell
+from services.core.trading_service import TradingService
+from services.core.validation_service import ValidationService
 
 
 def validate_buy_form(data: dict) -> bool:
@@ -241,5 +243,56 @@ def show_sell_form() -> None:
                 key="s_price",
             )
             st.form_submit_button("Submit Sell", on_click=submit_sell)
+
+
+def show_buy_form(trading_service: TradingService) -> None:
+    """Display buy form using trading service."""
+    with st.form("buy_form", clear_on_submit=True):
+        st.subheader("Buy Stock")
+        
+        ticker = st.text_input("Ticker Symbol").upper()
+        shares = st.number_input("Number of Shares", min_value=1, value=1)
+        price = st.number_input("Price per Share", min_value=0.01, value=100.0)
+        
+        if st.form_submit_button("Buy"):
+            # Validate inputs
+            ticker_valid, ticker_error = ValidationService.validate_ticker(ticker)
+            shares_valid, shares_error = ValidationService.validate_shares(shares)
+            price_valid, price_error = ValidationService.validate_price(price)
+            
+            if not all([ticker_valid, shares_valid, price_valid]):
+                errors = [e for e in [ticker_error, shares_error, price_error] if e]
+                st.error("; ".join(errors))
+                return
+            
+            # Execute trade
+            result = trading_service.buy_stock(ticker, shares, price)
+            
+            if result.success:
+                st.success(result.message)
+            else:
+                st.error(result.message)
+
+def show_sell_form(trading_service: TradingService) -> None:
+    """Display sell form using trading service."""
+    with st.form("sell_form", clear_on_submit=True):
+        st.subheader("Sell Stock")
+        
+        # Get available tickers
+        df = trading_service.portfolio.to_dataframe()
+        if df.empty:
+            st.info("No positions to sell")
+            return
+        
+        ticker = st.selectbox("Select Stock", df['ticker'].tolist())
+        shares = st.number_input("Number of Shares", min_value=1, value=1)
+        
+        if st.form_submit_button("Sell"):
+            result = trading_service.sell_stock(ticker, shares)
+            
+            if result.success:
+                st.success(result.message)
+            else:
+                st.error(result.message)
 
 

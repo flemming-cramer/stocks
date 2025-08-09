@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from config import COL_TICKER
 from services.market import fetch_price
@@ -98,19 +99,3 @@ def show_watchlist_sidebar() -> None:
         getattr(feedback_slot, kind)(text)
         st.session_state.watchlist_feedback = None
     sidebar.divider()
-
-
-def add_to_watchlist(ticker: str) -> None:
-    """Add a ticker to the watchlist if not already present."""
-    if ticker not in st.session_state.watchlist:
-        st.session_state.watchlist.append(ticker)
-        st.session_state.watchlist_feedback = ("success", f"{ticker} added to watchlist.")
-    else:
-        st.session_state.watchlist_feedback = ("info", f"{ticker} is already in watchlist.")
-
-
-def remove_from_watchlist(ticker: str) -> None:
-    """Remove a ticker from the watchlist."""
-    while ticker in st.session_state.watchlist:
-        st.session_state.watchlist.remove(ticker)
-    st.session_state.watchlist_prices.pop(ticker, None)

@@ -1,66 +1,69 @@
-import math
+from dataclasses import dataclass
+from typing import Set, Dict, Optional
 import streamlit as st
-
-from data.watchlist import save_watchlist
-from services.market import fetch_prices
-
-
-@st.cache_data(ttl=1800)
-def load_watchlist_prices(tickers: list[str]) -> dict[str, float]:
-    """Fetch and parse latest prices for ``tickers``."""
-
-    data = fetch_prices(tickers)
-    prices: dict[str, float] = {}
-    if data.empty:
-        return prices
-
-    if data.columns.nlevels > 1:
-        close = data["Close"].iloc[-1]
-        for t in tickers:
-            val = close.get(t)
-            if val is None:
-                continue
-            try:
-                price = float(val)
-            except (TypeError, ValueError):
-                continue
-            if not math.isnan(price):
-                prices[t] = price
-    else:
-        if tickers:
-            val = data["Close"].iloc[-1]
-            try:
-                price = float(val)
-            except (TypeError, ValueError):
-                pass
-            else:
-                if not math.isnan(price):
-                    prices[tickers[0]] = price
-
-    return prices
+import pandas as pd
+from services.market import get_current_price
 
 
-def get_watchlist() -> list[str]:
-    """Return the current watchlist from ``st.session_state``."""
+@dataclass
+class WatchlistState:
+    """Container for watchlist state"""
+    tickers: Set[str] = None
+    prices: Dict[str, float] = None
 
-    return st.session_state.get("watchlist", [])
+    def __post_init__(self):
+        self.tickers = set() if self.tickers is None else self.tickers
+        self.prices = {} if self.prices is None else self.prices
+
+
+def init_watchlist() -> None:
+    """Initialize watchlist state if not present"""
+    if not hasattr(st.session_state, "watchlist_state"):
+        st.session_state.watchlist_state = WatchlistState()
 
 
 def add_to_watchlist(ticker: str) -> None:
-    """Add ``ticker`` to the watchlist and persist it."""
+    """Add ticker to watchlist"""
+    init_watchlist()
+    ticker = ticker.upper()
 
-    watchlist = st.session_state.setdefault("watchlist", [])
-    symbol = ticker.upper()
-    if symbol and symbol not in watchlist:
-        watchlist.append(symbol)
-        save_watchlist(watchlist)
+    if ticker in st.session_state.watchlist_state.tickers:
+        st.info(f"{ticker} is already in your watchlist")
+        return
+
+    st.session_state.watchlist_state.tickers.add(ticker)
 
 
-def remove_from_watchlist(symbol: str) -> None:
-    """Remove a ticker symbol from the watchlist in session state and persistent storage."""
+def remove_from_watchlist(ticker: str) -> None:
+    """Remove ticker from watchlist"""
+    init_watchlist()
+    ticker = ticker.upper()
+    st.session_state.watchlist_state.tickers.discard(ticker)
 
-    watchlist = get_watchlist()
-    if symbol in watchlist:
-        watchlist.remove(symbol)
-        save_watchlist(watchlist)
-        st.session_state.watchlist = watchlist
+
+def get_watchlist() -> pd.DataFrame:
+    """Get watchlist as DataFrame"""
+    init_watchlist()
+    tickers = list(st.session_state.watchlist_state.tickers)
+    return pd.DataFrame({"ticker": tickers})
+
+
+def load_watchlist_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Update watchlist prices and calculate changes."""
+
+    if df.empty:
+        return df
+
+    result = df.copy()
+    result["current_price"] = None
+
+    for idx, row in result.iterrows():
+        price = get_current_price(row["ticker"])
+        result.at[idx, "current_price"] = price
+
+        if "last_price" in result.columns and price is not None:
+            last_price = row["last_price"]
+            result.at[idx, "change"] = price - last_price
+            result.at[idx, "change_pct"] = ((price - last_price) / last_price) * 100
+
+    return result
