@@ -46,17 +46,21 @@ def get_day_high_low(ticker: str) -> tuple[float, float]:
 def get_current_price(ticker: str) -> float:
     """Get current price for a ticker."""
     try:
+        # Use explicit auto_adjust parameter
         data = yf.download(
-            ticker,
-            period="1d",
+            ticker, 
+            period="1d", 
             progress=False,
-            auto_adjust=True,  # Explicitly set auto_adjust
+            auto_adjust=True
         )
-
-        if not data.empty:
-            # Use iloc[0] instead of direct float conversion
-            return float(data["Close"].iloc[0])
-        return None
+        
+        if data.empty:
+            return None
+            
+        # Use recommended iloc syntax
+        close_price = data["Close"].iloc[0]
+        return float(close_price)
+        
     except Exception as e:
         logger.error(f"Error getting price for {ticker}: {e}")
         return None
