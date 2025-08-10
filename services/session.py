@@ -28,23 +28,12 @@ def init_session_state() -> None:
     }.items():
         st.session_state.setdefault(key, default)
 
-    if "portfolio" not in st.session_state:
-        st.session_state.portfolio = pd.DataFrame(columns=[
-            'ticker',
-            'shares',
-            'price',
-            'buy_price',
-            'Market Value',  # Added required columns
-            'Cost Basis',
-            'stop_loss',
-            'Return %'
-        ])
-
-    if "cash" not in st.session_state:
-        st.session_state.cash = 0.0
-
-    if "needs_cash" not in st.session_state:
-        st.session_state.needs_cash = True
+    # Load portfolio and cash from database on startup
+    if "portfolio" not in st.session_state or "cash" not in st.session_state:
+        portfolio_df, cash_amount, needs_cash = load_portfolio()
+        st.session_state.portfolio = portfolio_df
+        st.session_state.cash = cash_amount
+        st.session_state.needs_cash = needs_cash
 
     if not st.session_state.watchlist and WATCHLIST_FILE.exists():
         st.session_state.watchlist = load_watchlist()

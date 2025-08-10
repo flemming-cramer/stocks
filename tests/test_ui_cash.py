@@ -35,8 +35,8 @@ class TestCashSection:
             value="$10,000.50"
         )
         
-        # Verify button was created
-        mock_st.button.assert_called_once_with("Add Cash", key="toggle_cash")
+        # Verify button was created (with type parameter)
+        mock_st.button.assert_called_once_with("Add Cash", key="toggle_cash", type="primary")
     
     @patch('ui.cash.save_portfolio_snapshot')
     @patch('ui.cash.st')

@@ -269,5 +269,6 @@ class TestSavePortfolioSnapshot:
             mock_conn.execute.assert_any_call("DELETE FROM portfolio")
             mock_conn.execute.assert_any_call("INSERT OR REPLACE INTO cash (id, balance) VALUES (0, ?)", (1000.0,))
             
-            # Check that to_sql was called for both portfolio and history
-            assert mock_to_sql.call_count == 2
+            # For empty portfolio, only portfolio_history gets saved (1 call)
+            # Portfolio table doesn't get to_sql call because the DataFrame is empty
+            assert mock_to_sql.call_count == 1

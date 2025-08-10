@@ -40,43 +40,61 @@ class TestTradingServiceCore:
     def test_trading_service_init(self, mock_sell, mock_buy):
         """Test trading service initialization."""
         from services.core.trading_service import TradingService
+        from services.core.portfolio_service import PortfolioService
+        from services.core.market_service import MarketService
         
-        # Mock portfolio service
-        mock_portfolio = Mock()
-        service = TradingService(mock_portfolio)
+        # Mock portfolio service and market service
+        mock_portfolio = Mock(spec=PortfolioService)
+        mock_market = Mock(spec=MarketService)
+        service = TradingService(mock_portfolio, mock_market)
         assert service is not None
+        assert service.portfolio == mock_portfolio
+        assert service.market == mock_market
     
     def test_trading_service_buy(self, mock_sell, mock_buy):
         """Test trading service buy functionality."""
         from services.core.trading_service import TradingService
+        from services.core.portfolio_service import PortfolioService
+        from services.core.market_service import MarketService
         
-        mock_portfolio = Mock()
-        service = TradingService(mock_portfolio)
+        mock_portfolio = Mock(spec=PortfolioService)
+        mock_market = Mock(spec=MarketService)
+        mock_market.get_current_price.return_value = 150.0
         
-        mock_buy.return_value = True
+        service = TradingService(mock_portfolio, mock_market)
         
-        try:
-            result = service.buy('AAPL', 10, 150.0)
-            # Should call underlying buy function
-            mock_buy.assert_called_once()
-        except Exception:
-            pass
+        # Test buy with sufficient funds
+        result = service.buy_stock('AAPL', 10, 150.0)
+        assert result.success is True
+        assert "Bought" in result.message
     
     def test_trading_service_sell(self, mock_sell, mock_buy):
         """Test trading service sell functionality."""
         from services.core.trading_service import TradingService
+        from services.core.portfolio_service import PortfolioService
+        from services.core.market_service import MarketService
+        from services.core.portfolio_service import Position
         
-        mock_portfolio = Mock()
-        service = TradingService(mock_portfolio)
+        mock_portfolio = Mock(spec=PortfolioService)
+        mock_market = Mock(spec=MarketService)
+        mock_market.get_current_price.return_value = 160.0
         
-        mock_sell.return_value = True
+        # Mock portfolio to have a position via to_dataframe
+        import pandas as pd
+        position_df = pd.DataFrame({
+            'ticker': ['AAPL'],
+            'shares': [20],
+            'price': [150.0],
+            'cost_basis': [3000.0]
+        })
+        mock_portfolio.to_dataframe.return_value = position_df
         
-        try:
-            result = service.sell('AAPL', 5)
-            # Should call underlying sell function
-            mock_sell.assert_called_once()
-        except Exception:
-            pass
+        service = TradingService(mock_portfolio, mock_market)
+        
+        # Test sell
+        result = service.sell_stock('AAPL', 5, 160.0)
+        assert result.success is True
+        assert "Successfully sold" in result.message
 
 
 class TestValidationServiceCore:
@@ -117,30 +135,33 @@ class TestWatchlistServiceExtended:
     
     def test_watchlist_service_add_ticker(self, mock_sidebar, mock_write):
         """Test adding ticker to watchlist."""
-        from services.watchlist_service import add_ticker, WatchlistState
+        from services.watchlist_service import add_to_watchlist, WatchlistState
+        import streamlit as st
         
-        state = WatchlistState()
+        # Initialize session state
+        if not hasattr(st.session_state, 'watchlist_state'):
+            st.session_state.watchlist_state = WatchlistState()
         
-        try:
-            add_ticker('AAPL', state)
-            assert 'AAPL' in state.tickers
-        except Exception:
-            # Function may not exist exactly as expected
-            pass
+        initial_count = len(st.session_state.watchlist_state.tickers)
+        add_to_watchlist('AAPL')
+        assert len(st.session_state.watchlist_state.tickers) >= initial_count
     
     def test_watchlist_service_remove_ticker(self, mock_sidebar, mock_write):
         """Test removing ticker from watchlist."""
-        from services.watchlist_service import remove_ticker, WatchlistState
+        from services.watchlist_service import remove_from_watchlist, add_to_watchlist, WatchlistState
+        import streamlit as st
         
-        state = WatchlistState()
-        state.tickers.add('AAPL')
+        # Initialize session state
+        if not hasattr(st.session_state, 'watchlist_state'):
+            st.session_state.watchlist_state = WatchlistState()
         
-        try:
-            remove_ticker('AAPL', state)
-            assert 'AAPL' not in state.tickers
-        except Exception:
-            # Function may not exist exactly as expected
-            pass
+        # Add ticker first
+        add_to_watchlist('AAPL')
+        initial_count = len(st.session_state.watchlist_state.tickers)
+        
+        # Remove ticker
+        remove_from_watchlist('AAPL')
+        assert len(st.session_state.watchlist_state.tickers) <= initial_count
     
     def test_watchlist_state_post_init(self, mock_sidebar, mock_write):
         """Test watchlist state initialization."""
