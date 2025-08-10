@@ -94,7 +94,7 @@ class TestTradingServiceCore:
         # Test sell
         result = service.sell_stock('AAPL', 5, 160.0)
         assert result.success is True
-        assert "Successfully sold" in result.message
+        assert "Sold" in result.message
 
 
 class TestValidationServiceCore:
