@@ -89,7 +89,7 @@ ChatGPT-Micro-Cap-Experiment/
 │   ├── watchlist.py            # Watchlist data models
 │   └── trading.db              # SQLite database file
 ├── pages/                      # Streamlit pages
-│   ├── 03_UserGuide.py         # User guide and help page
+│   ├── user_guide_page.py       # User guide and help page
 │   ├── performance_page.py     # Portfolio performance analytics
 │   └── watchlist.py            # Stock watchlist management
 ├── services/                   # Business logic layer

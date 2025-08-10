@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 from config import WATCHLIST_FILE
 from data.portfolio import load_portfolio
