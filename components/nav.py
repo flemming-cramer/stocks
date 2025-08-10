@@ -65,8 +65,8 @@ def navbar(active_page: str) -> None:
             f"""
             <div class="nav-container">
                 <a class="nav-link {'active' if active_page == Path('app.py').name else ''}" href="/" target="_self">Dashboard</a>
-                <a class="nav-link {'active' if active_page == Path('pages/performance.py').name else ''}" href="/Performance" target="_self">Performance</a>
-                <a class="nav-link {'active' if active_page == Path('pages/03_UserGuide.py').name else ''}" href="/UserGuide" target="_self">User Guide</a>
+                <a class="nav-link {'active' if active_page == Path('pages/performance_page.py').name else ''}" href="/performance_page" target="_self">Performance</a>
+                <a class="nav-link {'active' if active_page == Path('pages/03_UserGuide.py').name else ''}" href="/03_UserGuide" target="_self">User Guide</a>
                 <a class="nav-link {'active' if active_page == Path('pages/watchlist.py').name else ''}" href="/watchlist" target="_self">Watchlist</a>
                 {csv_link}
             </div>

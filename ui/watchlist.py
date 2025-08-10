@@ -49,7 +49,7 @@ def show_watchlist_sidebar() -> None:
     error_slot = sidebar.empty()
     with sidebar.form("lookup_form", clear_on_submit=True):
         symbol = st.text_input(
-            "",
+            "Stock Symbol",
             key="lookup_symbol",
             placeholder="(e.g., AAPL)",
             label_visibility="collapsed",

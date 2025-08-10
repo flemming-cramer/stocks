@@ -55,3 +55,6 @@ Documents/
 *.db
 *.json
 *.csv
+
+# Archive folder
+archive/

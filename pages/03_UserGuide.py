@@ -5,7 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from components.nav import navbar
-from ui.user_guide import render_user_guide
+from ui.user_guide import show_user_guide
 from ui.watchlist import show_watchlist_sidebar
 
 
@@ -21,5 +21,5 @@ show_watchlist_sidebar()
 
 st.header("User Guide")
 
-render_user_guide()
+show_user_guide()
 
