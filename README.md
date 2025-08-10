@@ -1,118 +1,195 @@
 # ChatGPT Micro-Cap Experiment
-Welcome to the repo behind my 6-month live trading experiment where ChatGPT manages a real-money micro-cap portfolio.
 
-# The Concept
-Everyday, I kept seeing the same ad about having an some A.I. pick undervalued stocks. It was obvious it was trying to get me to subscribe to some garbage, so I just rolled my eyes. 
-Then I started wondering, "How well would that actually work?".
+Welcome to the repository behind my live trading experiment where ChatGPT manages a real-money micro-cap portfolio, now enhanced with a comprehensive **Streamlit Portfolio Management Application**.
 
-So, starting with just $100, I wanted to answer a simple but powerful question:
+## 🎯 The Concept
 
-**Can powerful large language models like ChatGPT actually generate alpha (or at least make smart trading decisions) using real-time data?**
+Starting with just $100, this project answers a simple but powerful question:
 
-## Each trading day:
+**Can large language models like ChatGPT actually generate alpha using real-time market data?**
 
-- I provide it trading data on the stocks in it's portfolio.
+### Daily Trading Process:
+- ChatGPT receives real-time trading data on portfolio holdings
+- Strict stop-loss rules and risk management apply  
+- Weekly deep research sessions for portfolio reevaluation
+- Performance data tracked and published regularly
 
-- Strict stop-loss rules apply.
+## 📊 Current Performance
 
-- Everyweek I allow it to use deep research to reevaluate it's account.
-
-- I track and publish performance data weekly on my blog. [SubStack Link](https://nathanbsmith729.substack.com)
-
-## Documentation
-
-Additional project notes, prompts, and disclaimers live in [`docs/experiment_details`](docs/experiment_details).
-
-# Performance Example (6/30 – 7/25)
+Check out the latest results in [`docs/experiment_details`](docs/experiment_details) and follow weekly updates on [SubStack](https://nathanbsmith729.substack.com).
 
 ---
 
 ![Week 4 Performance](docs/results-6-30-7-25.png)
 
+*Currently outperforming the Russell 2K benchmark*
+
 ---
-- Currently stomping on the Russell 2K.
 
-# Features of This Repo
-Live trading scripts — Used to evaluate prices and update holdings daily
+## 🚀 Portfolio Management Application
 
-LLM-powered decision engine — ChatGPT picks the trades
+This repository now includes a **full-featured Streamlit web application** for portfolio management and analysis.
 
-Performance tracking — CSVs with daily PnL, total equity, and trade history
+### Key Features:
+- **📱 Real-time Portfolio Dashboard** - Live portfolio tracking with current values and P&L
+- **📈 Performance Analytics** - Historical charts, KPIs, and performance metrics  
+- **💰 Trading Interface** - Buy/sell stocks with real-time price validation
+- **👁️ Watchlist Management** - Track potential investments and market opportunities
+- **📊 Data Export** - Download portfolio snapshots and historical data
+- **🗄️ SQLite Database** - Persistent local data storage
 
-Visualization tools — Matplotlib graphs comparing ChatGPT vs Index
+### Quick Start:
 
-Logs & trade data — Auto-saved logs for transparency
+```bash
+# Clone the repository
+git clone https://github.com/bradnunnally/ChatGPT-Micro-Cap-Experiment.git
+cd ChatGPT-Micro-Cap-Experiment
 
-# Why This Matters
-AI is being hyped across every industry, but can it really manage money without guidance?
-
-This project is an attempt to find out, with transparency, data, and a real budget.
-
-# Tech Stack
-Basic Python 
-
-Pandas + yFinance for data & logic
-
-Matplotlib for visualizations
-
-ChatGPT for decision-making
-
-# Installation
-To run the scripts locally, install the Python dependencies:
-
-```
+# Install dependencies
 pip install -r requirements.txt
-```
 
-# Supported Scripts
-
-- `scripts/generate_graph.py` — plot portfolio performance against the S&P 500.
-
-# Testing and Code Coverage
-
-Unit tests live in the `tests/` directory. A helper script `scripts/run_tests_with_coverage.py` runs the suite and enforces a default 95% coverage threshold.
-
-```
-python scripts/run_tests_with_coverage.py
-```
-
-To view coverage without failing on the current percentage, supply a lower minimum:
-
-```
-python scripts/run_tests_with_coverage.py --min 0
-```
-
-Additional tests should be added until the 95% requirement is met.
-
-# Follow Along
-The experiment runs June 2025 to December 2025.
-Every trading day I will update the portfolio CSV file.
-If you feel inspired to do something simiar, feel free to use this as a blueprint.
-
-Updates are posted weekly on my blog — more coming soon!
-
-One final shameless plug: (https://substack.com/@nathanbsmith?utm_source=edit-profile-page)
-
-Find a mistake in the logs or have advice?
-Please Reach out here: nathanbsmith.business@gmail.com
-
-## Streamlit Dashboard
-
-This repository now ships with a lightweight Streamlit dashboard for managing
-the experimental portfolio locally.
-
-### Installation
-
-```
-pip install -r requirements.txt
-```
-
-### Running the App
-
-```
+# Launch the application
 streamlit run app.py
 ```
 
-The application stores data in the `data/` directory so it survives across
-restarts.  If you encounter issues, ensure this folder is writable and that the
-CSV files are not open in another program.
+The app will open at `http://localhost:8501` with a clean interface ready for portfolio management.
+
+### Application Architecture:
+- **Frontend**: Streamlit web interface with responsive design
+- **Backend**: Python services for trading, market data, and portfolio management  
+- **Database**: SQLite for reliable local data persistence
+- **Market Data**: Yahoo Finance integration for real-time stock prices
+- **Testing**: Comprehensive test suite with 82% coverage
+
+## 🛠️ Technical Stack
+
+- **Python 3.13+** - Core application runtime
+- **Streamlit** - Modern web application framework
+- **Pandas + NumPy** - Data manipulation and analysis
+- **yFinance** - Real-time market data integration
+- **SQLite** - Local database for data persistence
+- **Plotly** - Interactive data visualizations
+- **Pytest** - Comprehensive testing framework
+
+## 📁 Project Structure
+
+```
+ChatGPT-Micro-Cap-Experiment/
+├── app.py                      # Main Streamlit application entry point
+├── config.py                   # Configuration settings and constants
+├── portfolio.py                # Portfolio management logic
+├── requirements.txt            # Python dependencies
+├── pytest.ini                 # Pytest configuration
+├── .streamlit/config.toml      # Streamlit configuration
+├── components/                 # Reusable UI components
+│   └── nav.py                  # Navigation component
+├── data/                       # Data management layer
+│   ├── db.py                   # Database connection and operations
+│   ├── portfolio.py            # Portfolio data models
+│   ├── watchlist.py            # Watchlist data models
+│   └── trading.db              # SQLite database file
+├── pages/                      # Streamlit pages
+│   ├── 03_UserGuide.py         # User guide and help page
+│   ├── performance_page.py     # Portfolio performance analytics
+│   └── watchlist.py            # Stock watchlist management
+├── services/                   # Business logic layer
+│   ├── logging.py              # Application logging
+│   ├── market.py               # Market data services
+│   ├── portfolio_service.py    # Portfolio business logic
+│   ├── session.py              # Session management
+│   ├── trading.py              # Trading operations
+│   └── watchlist_service.py    # Watchlist business logic
+├── ui/                         # UI components and layouts
+│   ├── cash.py                 # Cash management interface
+│   ├── dashboard.py            # Main dashboard interface
+│   ├── forms.py                # Trading forms
+│   ├── summary.py              # Portfolio summary views
+│   └── user_guide.py           # User guide content
+├── tests/                      # Test suite (82% coverage)
+│   ├── conftest.py             # Pytest configuration
+│   ├── test_*.py               # Individual test files
+│   └── mock_streamlit.py       # Streamlit mocking utilities
+├── scripts/                    # Development and utility scripts
+│   └── run_tests_with_coverage.py  # Test runner with coverage
+├── archive/                    # Archived legacy scripts
+│   ├── generate_graph.py       # Legacy data visualization
+│   └── migrate_csv_to_sqlite.py    # Legacy data migration
+└── docs/                       # Documentation and analysis
+    ├── experiment_details/     # Detailed experiment documentation
+    └── results-6-30-7-25.png   # Performance results
+```
+
+## 🧪 Development & Testing
+
+### Running Tests:
+```bash
+# Run full test suite
+pytest
+
+# Run with coverage report
+pytest --cov=. --cov-report=html
+
+# Run test suite with coverage helper script
+python scripts/run_tests_with_coverage.py
+
+# Run specific test file
+pytest tests/test_portfolio_manager.py
+```
+
+### Code Quality:
+- **82% Test Coverage** - Comprehensive testing across all major modules
+- **Type Hints** - Full type annotation for better code reliability
+- **Modular Architecture** - Clean separation of concerns
+- **Error Handling** - Robust error handling and user feedback
+
+## 🔧 Configuration
+
+The application uses SQLite for data storage in the `data/` directory. Configuration options are available in:
+- `.streamlit/config.toml` - Streamlit app configuration and theming
+- `pytest.ini` - Test configuration and coverage settings
+
+## 📖 Usage Guide
+
+### First Time Setup:
+1. **Launch Application**: Run `streamlit run app.py`
+2. **Add Initial Cash**: Use the cash management section to fund your account
+3. **Start Trading**: Buy your first stocks using the trading interface
+4. **Track Performance**: Monitor your portfolio's performance over time
+
+### Daily Workflow:
+- **Monitor Dashboard**: Check current positions and P&L
+- **Review Watchlist**: Track potential investment opportunities  
+- **Execute Trades**: Buy/sell positions based on your strategy
+- **Analyze Performance**: Review historical performance and metrics
+
+## 🚨 Important Notes
+
+- **Live Market Data**: Prices update in real-time during market hours
+- **Data Persistence**: All portfolio data is stored locally and persists between sessions
+- **Risk Management**: Always maintain appropriate position sizing and risk controls
+- **Educational Purpose**: This application is for educational and experimental use
+
+## 📈 Experiment Status
+
+**Timeline**: June 2025 - December 2025  
+**Starting Capital**: $100  
+**Current Status**: Active trading with performance tracking  
+**Updates**: Weekly performance reports published on [SubStack](https://nathanbsmith729.substack.com)
+
+## 🤝 Contributing
+
+Feel free to:
+- Report bugs or suggest improvements
+- Submit pull requests for new features
+- Use this as a blueprint for your own experiments
+- Share feedback and results
+
+## 📞 Contact
+
+- **Email**: nathanbsmith.business@gmail.com
+- **Blog**: [SubStack Updates](https://substack.com/@nathanbsmith)
+- **Issues**: GitHub Issues for bug reports and feature requests
+
+---
+
+*Disclaimer: This is an experimental project for educational purposes. Past performance does not guarantee future results. Please invest responsibly.*

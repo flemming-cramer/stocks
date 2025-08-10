@@ -61,13 +61,19 @@ def highlight_stop(row: pd.Series) -> list:
     except (KeyError, TypeError):
         return [''] * len(row)
 
-def highlight_pct(row: pd.Series) -> list:
-    """Highlight percentage changes."""
+def highlight_pct(val) -> str:
+    """Highlight percentage changes for individual values."""
     try:
-        return ['color: green' if val > 0 else 'color: red' if val < 0 
-                else '' for val in row]
+        if pd.isna(val):
+            return ''
+        if val > 0:
+            return 'color: green'
+        elif val < 0:
+            return 'color: red'
+        else:
+            return ''
     except (TypeError, ValueError):
-        return [''] * len(row)
+        return ''
 
 def initialize_services():
     """Initialize services in session state."""
@@ -94,7 +100,7 @@ def render_dashboard() -> None:
             start_cash_raw = st.text_input(
                 "Enter starting cash", key="start_cash", placeholder="0.00"
             )
-            init_submit = st.form_submit_button("Set Starting Cash")
+            init_submit = st.form_submit_button("Set Starting Cash", type="primary")
         if init_submit:
             try:
                 start_cash = float(start_cash_raw)
@@ -267,7 +273,7 @@ def render_dashboard() -> None:
             show_sell_form()
 
         st.subheader("Daily Summary")
-        if st.button("Generate Daily Summary"):
+        if st.button("Generate Daily Summary", type="primary"):
             if not summary_df.empty:
                 st.session_state.daily_summary = build_daily_summary(summary_df)
             else:

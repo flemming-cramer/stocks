@@ -16,13 +16,13 @@ def show_cash_section() -> None:
     if "show_cash_form" not in st.session_state:
         st.session_state.show_cash_form = False
 
-    if st.button("Add Cash", key="toggle_cash"):
+    if st.button("Add Cash", key="toggle_cash", type="primary"):
         st.session_state.show_cash_form = not st.session_state.show_cash_form
 
     if st.session_state.show_cash_form:
         with st.form("add_cash_form"):
             st.number_input("Amount", key="ac_amount", min_value=0.0, step=100.0)
-            submitted = st.form_submit_button("Add")
+            submitted = st.form_submit_button("Add", type="primary")
             if submitted:
                 st.session_state.cash += st.session_state.ac_amount
                 st.session_state.show_cash_form = False

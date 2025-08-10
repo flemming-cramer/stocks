@@ -108,10 +108,23 @@ def show_buy_form(ticker_default: str = "") -> None:
             st.session_state.pop("b_shares", None)
             st.session_state.pop("b_price", None)
             st.session_state.pop("b_stop_pct", None)
+            # Close the buy form after successful submission
+            st.session_state.buy_form_open = False
         else:
             st.session_state.feedback = ("error", msg)
 
-    with st.expander("Log a Buy"):
+    # Initialize buy form state in session state
+    if "buy_form_open" not in st.session_state:
+        st.session_state.buy_form_open = False
+    
+    # Create a button to toggle the buy form
+    if st.button("📈 Log a Buy", use_container_width=True, type="primary"):
+        st.session_state.buy_form_open = not st.session_state.buy_form_open
+    
+    # Show the buy form if it's open
+    if st.session_state.buy_form_open:
+        st.markdown("### Buy Stock")
+        
         with st.form("buy_form", clear_on_submit=True):
             st.text_input(
                 "Ticker",
@@ -148,7 +161,26 @@ def show_buy_form(ticker_default: str = "") -> None:
                     1 - st.session_state.b_stop_pct / 100
                 )
                 st.caption(f"Stop loss price: ${calc_stop:.2f}")
-            st.form_submit_button("Submit Buy", on_click=submit_buy)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                submitted = st.form_submit_button(
+                    "Submit Buy", 
+                    on_click=submit_buy,
+                    use_container_width=True,
+                    type="primary"
+                )
+            with col2:
+                if st.form_submit_button(
+                    "Cancel",
+                    use_container_width=True,
+                    type="secondary"
+                ):
+                    st.session_state.buy_form_open = False
+                    st.rerun()
+            
+            if submitted:
+                st.session_state.buy_form_open = False
 
 
 def show_sell_form() -> None:
@@ -161,8 +193,19 @@ def show_sell_form() -> None:
                 "Shares and price must be positive.",
             )
             return
+        
+        # Get the selected ticker from session state
+        selected_ticker = st.session_state.get("s_ticker_selected", None)
+        
+        if not selected_ticker or selected_ticker == "Select a Ticker":
+            st.session_state.feedback = (
+                "error",
+                "Please select a ticker to sell.",
+            )
+            return
+            
         ok, msg, port, cash = manual_sell(
-            st.session_state.s_ticker,
+            selected_ticker,
             st.session_state.s_shares,
             st.session_state.s_price,
             st.session_state.portfolio,
@@ -172,17 +215,34 @@ def show_sell_form() -> None:
             st.session_state.portfolio = port
             st.session_state.cash = cash
             st.session_state.feedback = ("success", msg)
-            # Clear form values
-            st.session_state.pop("s_ticker", None)
+            # Clear form values and close the form
+            st.session_state.pop("s_ticker_selected", None)
+            st.session_state.pop("s_ticker_select", None)
             st.session_state.pop("s_shares", None)
             st.session_state.pop("s_price", None)
+            # Close the sell form after successful submission
+            st.session_state.sell_form_open = False
         else:
             st.session_state.feedback = ("error", msg)
 
-    with st.expander("Log a Sell"):
+    # Initialize sell form state in session state
+    if "sell_form_open" not in st.session_state:
+        st.session_state.sell_form_open = False
+    
+    # Create a button to toggle the sell form
+    if st.button("📉 Log a Sale", use_container_width=True, type="primary"):
+        st.session_state.sell_form_open = not st.session_state.sell_form_open
+    
+    # Show the sell form if it's open
+    if st.session_state.sell_form_open:
+        st.markdown("### Sell Stock")
+        
         holdings = st.session_state.portfolio
         if holdings.empty:
             st.info("You have no holdings to sell.")
+            if st.button("Close", key="close_sell_form", type="secondary"):
+                st.session_state.sell_form_open = False
+                st.rerun()
             return
 
         # Build options with a placeholder
@@ -190,16 +250,20 @@ def show_sell_form() -> None:
             st.session_state.portfolio[COL_TICKER].unique().tolist()
         )
 
-        # Render the selectbox with placeholder default
+        # Keep the selectbox to allow dynamic updates
         selected = st.selectbox(
             "Ticker",
             options=tickers,
             index=0,  # Force default selection to "Select a Ticker"
+            key="s_ticker_select"
         )
 
         # Only proceed if a real ticker is selected
         if selected == "Select a Ticker":
             st.warning("Please choose a ticker from your portfolio before selling.")
+            if st.button("Close", key="close_sell_form2", type="secondary"):
+                st.session_state.sell_form_open = False
+                st.rerun()
             return
 
         matching = st.session_state.portfolio[
@@ -209,6 +273,9 @@ def show_sell_form() -> None:
         # Check if matching shares exist before proceeding
         if matching.empty:
             st.error(f"No shares found for {selected}")
+            if st.button("Close", key="close_sell_form3", type="secondary"):
+                st.session_state.sell_form_open = False
+                st.rerun()
             return
 
         max_shares = int(matching.iloc[0][COL_SHARES])
@@ -222,10 +289,18 @@ def show_sell_form() -> None:
 
         if max_shares == 0:
             st.info("You have no shares to sell for this ticker.")
+            if st.button("Close", key="close_sell_form4", type="secondary"):
+                st.session_state.sell_form_open = False
+                st.rerun()
             return
 
-        # Only render the form when shares are available
+        # Store the selected ticker in session state for the submit function
+        st.session_state.s_ticker_selected = selected
+
+        # Now render the form with the dynamic fields
         with st.form("sell_form", clear_on_submit=True):
+            st.write(f"**Selling {selected}** (You own {max_shares} shares)")
+            
             st.number_input(
                 "Shares to sell",
                 min_value=share_min,
@@ -242,57 +317,25 @@ def show_sell_form() -> None:
                 format="%.2f",
                 key="s_price",
             )
-            st.form_submit_button("Submit Sell", on_click=submit_sell)
-
-
-def show_buy_form(trading_service: TradingService) -> None:
-    """Display buy form using trading service."""
-    with st.form("buy_form", clear_on_submit=True):
-        st.subheader("Buy Stock")
-        
-        ticker = st.text_input("Ticker Symbol").upper()
-        shares = st.number_input("Number of Shares", min_value=1, value=1)
-        price = st.number_input("Price per Share", min_value=0.01, value=100.0)
-        
-        if st.form_submit_button("Buy"):
-            # Validate inputs
-            ticker_valid, ticker_error = ValidationService.validate_ticker(ticker)
-            shares_valid, shares_error = ValidationService.validate_shares(shares)
-            price_valid, price_error = ValidationService.validate_price(price)
             
-            if not all([ticker_valid, shares_valid, price_valid]):
-                errors = [e for e in [ticker_error, shares_error, price_error] if e]
-                st.error("; ".join(errors))
-                return
+            col1, col2 = st.columns(2)
+            with col1:
+                submitted = st.form_submit_button(
+                    "Submit Sell", 
+                    on_click=submit_sell,
+                    use_container_width=True,
+                    type="primary"
+                )
+            with col2:
+                if st.form_submit_button(
+                    "Cancel",
+                    use_container_width=True,
+                    type="secondary"
+                ):
+                    st.session_state.sell_form_open = False
+                    st.rerun()
             
-            # Execute trade
-            result = trading_service.buy_stock(ticker, shares, price)
-            
-            if result.success:
-                st.success(result.message)
-            else:
-                st.error(result.message)
-
-def show_sell_form(trading_service: TradingService) -> None:
-    """Display sell form using trading service."""
-    with st.form("sell_form", clear_on_submit=True):
-        st.subheader("Sell Stock")
-        
-        # Get available tickers
-        df = trading_service.portfolio.to_dataframe()
-        if df.empty:
-            st.info("No positions to sell")
-            return
-        
-        ticker = st.selectbox("Select Stock", df['ticker'].tolist())
-        shares = st.number_input("Number of Shares", min_value=1, value=1)
-        
-        if st.form_submit_button("Sell"):
-            result = trading_service.sell_stock(ticker, shares)
-            
-            if result.success:
-                st.success(result.message)
-            else:
-                st.error(result.message)
+            if submitted:
+                st.session_state.sell_form_open = False
 
 

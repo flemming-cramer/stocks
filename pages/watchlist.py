@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import datetime
 
 import streamlit as st
+import pandas as pd
 
 st.set_page_config(
     page_title="Watchlist",
@@ -59,11 +60,11 @@ def watchlist_page():
         placeholder="Enter ticker symbol. E.g. AAPL",
         key="new_ticker",
     )
-    input_col.button("Add", on_click=add_ticker)
+    input_col.button("Add", on_click=add_ticker, type="primary")
 
     # Load current watchlist and prices
     watchlist = get_watchlist()
-    prices = load_watchlist_prices(watchlist)
+    prices_df = load_watchlist_prices(watchlist)
     last_update = datetime.now().strftime("%B %d, %Y at %I:%M %p")
     st.caption(f"Last update: {last_update}")
 
@@ -76,26 +77,30 @@ def watchlist_page():
     cols[3].markdown("**Delete**")
     cols[4].markdown("**Buy**")
 
-    # Loop through tickers
-    for ticker in watchlist:
-        price_info = prices.get(ticker)
-        if not price_info:
-            continue
-        price = float(price_info)
-        change_pct = None
-        row_cols = st.columns([3, 2, 2, 1, 1])
-        row_cols[0].write(ticker)
-        row_cols[1].write(f"${price:.2f}")
-        if change_pct is None:
-            row_cols[2].write("-")
-        else:
-            row_cols[2].write(f"{change_pct:.2f}%")
-        if row_cols[3].button("❌", key=f"del_{ticker}"):
-            remove_from_watchlist(ticker)
-            st.rerun()
-        if row_cols[4].button("Buy", key=f"buy_{ticker}"):
-            with st.modal(f"Buy {ticker}"):
-                show_buy_form(ticker_default=ticker)
+    # Loop through watchlist DataFrame
+    if not prices_df.empty:
+        for idx, row in prices_df.iterrows():
+            ticker = row['ticker']
+            price = row.get('current_price')
+            if price is None or pd.isna(price):
+                continue
+            
+            change_pct = None
+            row_cols = st.columns([3, 2, 2, 1, 1])
+            row_cols[0].write(ticker)
+            row_cols[1].write(f"${float(price):.2f}")
+            if change_pct is None:
+                row_cols[2].write("-")
+            else:
+                row_cols[2].write(f"{change_pct:.2f}%")
+            if row_cols[3].button("❌", key=f"del_{ticker}"):
+                remove_from_watchlist(ticker)
+                st.rerun()
+            if row_cols[4].button("Buy", key=f"buy_{ticker}"):
+                with st.modal(f"Buy {ticker}"):
+                    show_buy_form(ticker_default=ticker)
+    else:
+        st.write("Your watchlist is empty. Add some tickers above!")
 
 if __name__ == "__main__":
     watchlist_page()

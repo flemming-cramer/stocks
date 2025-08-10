@@ -127,9 +127,18 @@ def save_portfolio_snapshot(portfolio_df: pd.DataFrame, cash: float) -> pd.DataF
 
     init_db()
     with get_connection() as conn:
-        # Update current holdings
+        # Update current holdings - filter to only include database columns
         conn.execute("DELETE FROM portfolio")
-        portfolio_df.to_sql("portfolio", conn, if_exists="append", index=False)
+        
+        # Only save the core portfolio columns that exist in the database schema
+        # But only if the DataFrame is not empty and has the required columns
+        if not portfolio_df.empty:
+            core_columns = ['ticker', 'shares', 'stop_loss', 'buy_price', 'cost_basis']
+            # Only include columns that actually exist in the DataFrame
+            available_columns = [col for col in core_columns if col in portfolio_df.columns]
+            if available_columns:
+                portfolio_core = portfolio_df[available_columns].copy()
+                portfolio_core.to_sql("portfolio", conn, if_exists="append", index=False)
 
         # Update cash balance (single row table)
         conn.execute("INSERT OR REPLACE INTO cash (id, balance) VALUES (0, ?)", (cash,))

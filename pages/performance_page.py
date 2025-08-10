@@ -157,6 +157,18 @@ def main() -> None:
     db_path = Path(__file__).resolve().parent.parent / "data" / "trading.db"
     history = load_portfolio_history(str(db_path))
 
+    # Handle empty portfolio history
+    if history.empty:
+        st.info("📊 No portfolio history available yet. Start trading to see performance data!")
+        st.markdown("""
+        **To get started:**
+        1. Go to the Dashboard
+        2. Add some cash to your account
+        3. Buy some stocks
+        4. Your performance will appear here over time
+        """)
+        return
+
     min_date = history["date"].min().date()
     max_date = history["date"].max().date()
     start_date, end_date = st.date_input(
@@ -174,8 +186,11 @@ def main() -> None:
     col_chart, col_meta = st.columns([2, 1])
 
     with col_chart:
-        fig = create_performance_chart(hist_filtered)
-        st.plotly_chart(fig, use_container_width=True)
+        if not hist_filtered.empty:
+            fig = create_performance_chart(hist_filtered)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No data available for the selected date range.")
 
     if hist_filtered.shape[0] < 2:
         st.warning("Not enough data available for selected date range.")
@@ -184,10 +199,6 @@ def main() -> None:
     with col_meta:
         kpis = calculate_kpis(hist_filtered)
         display_kpis(kpis, col_meta)
-
-    # Apply the highlight_stop function to the portfolio table if it exists
-    if 'port_table' in locals():
-        port_table.style.map(highlight_stop)
 
 
 if __name__ == "__main__":

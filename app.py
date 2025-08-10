@@ -13,6 +13,43 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Simple CSS for basic button improvements
+st.markdown("""
+<style>
+/* Basic button styling improvements */
+.stButton > button {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Use data attributes for more reliable targeting */
+button[data-testid="baseButton-primary"] {
+    background-color: #2196f3;
+    border: 1px solid #2196f3;
+    color: white;
+}
+
+button[data-testid="baseButton-primary"]:hover {
+    background-color: #1976d2;
+    border: 1px solid #1976d2;
+    transform: translateY(-1px);
+}
+
+button[data-testid="baseButton-secondary"] {
+    background-color: #ffebee;
+    border: 1px solid #e57373;
+    color: #c62828;
+}
+
+button[data-testid="baseButton-secondary"]:hover {
+    background-color: #ffcdd2;
+    border: 1px solid #e53935;
+    transform: translateY(-1px);
+}
+</style>
+""", unsafe_allow_html=True)
+
 navbar(Path(__file__).name)
 
 st.header("Portfolio Dashboard")
