@@ -1,0 +1,7 @@
+[client]
+showSidebarNavigation = false
+# Streamlit Configuration
+# No theme section = pure system default
+# Uncomment the [theme] section below if you want custom colors
+
+

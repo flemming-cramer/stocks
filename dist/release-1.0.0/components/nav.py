@@ -1,7 +1,7 @@
 """Navigation bar component used across pages."""
 
-from pathlib import Path
 import base64
+from pathlib import Path
 
 import streamlit as st
 
@@ -23,8 +23,10 @@ def navbar(active_page: str) -> None:
         """
         <style>
 
-            section[data-testid="stSidebar"] { display: none; }
-             button[aria-label="Main menu"] { display: none; }
+            /* Hide sidebar and hamburger */
+            section[data-testid="stSidebar"] { display: none !important; }
+            div[data-testid="stSidebarNav"] { display: none !important; }
+            button[aria-label="Main menu"] { display: none !important; }
 
             .nav-container {
                 display: flex;
@@ -52,21 +54,6 @@ def navbar(active_page: str) -> None:
     st.title("AI Assisted Trading")
 
     nav = st.container()
-    # Show provider issue banner if any issues have been recorded
-    try:
-        issues = st.session_state.get("provider_issues", [])
-        if issues:
-            with st.container():
-                # Dismiss button will clear recorded issues
-                cols = st.columns([0.9, 0.1])
-                with cols[0]:
-                    st.error("Provider issues detected: " + "; ".join(issues))
-                with cols[1]:
-                    if st.button("Dismiss", key="dismiss_provider_issues"):
-                        st.session_state["provider_issues"] = []
-    except Exception:
-        # session_state may be unavailable in some test contexts
-        pass
     with nav:
         csv_link = ""
         if not st.session_state.portfolio.empty:
@@ -89,5 +76,3 @@ def navbar(active_page: str) -> None:
             """,
             unsafe_allow_html=True,
         )
-
-
