@@ -3,5 +3,8 @@
   "editor.formatOnSave": true,
   "[python]": { "editor.defaultFormatter": "ms-python.black-formatter" },
   "ruff.enable": true,
-  "editor.codeActionsOnSave": { "source.fixAll.ruff": true, "source.organizeImports": true }
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit",
+    "source.organizeImports": "explicit"
+  }
 }
