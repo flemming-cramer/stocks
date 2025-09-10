@@ -11,6 +11,7 @@ from analysis.roi_analyzer import ROIAnalyzer
 from analysis.drawdown_analyzer import DrawdownAnalyzer
 from analysis.risk_analyzer import RiskAnalyzer
 from analysis.performance_analyzer import PerformanceAnalyzer
+from analysis.cash_analyzer import CashAnalyzer
 from visualization.plot_generator import PlotGenerator
 from visualization.html_generator import HTMLGenerator
 from utils.helpers import download_sp500
@@ -36,6 +37,7 @@ def main():
     drawdown_analyzer = DrawdownAnalyzer()
     risk_analyzer = RiskAnalyzer()
     performance_analyzer = PerformanceAnalyzer()
+    cash_analyzer = CashAnalyzer(portfolio_loader)
     
     # Create reports directory
     reports_dir = HTMLGenerator.create_reports_directory(args.date)
@@ -63,9 +65,25 @@ def main():
     end_date = portfolio_totals["Date"].max()
     sp500 = download_sp500(start_date, end_date)
     
+    # Calculate cash positions
+    dates = sorted(trade_df['Date'].dt.date.unique())
+    actual_cash_balances = cash_analyzer.calculate_daily_cash_with_actual_balance(trade_df)
+    portfolio_values = cash_analyzer.get_portfolio_values_by_date(portfolio_df, dates)
+    stock_values = cash_analyzer.get_stock_values_by_date(portfolio_df, dates)
+
+    cash_data = {
+        'actual_cash': actual_cash_balances,
+        'portfolio_values': portfolio_values,
+        'stock_values': stock_values
+    }
+    
     # Generate plots
     performance_plot = plot_generator.generate_performance_comparison_plot(portfolio_totals, sp500)
     print(f"Saved performance comparison plot to: {performance_plot}")
+    
+    # Generate cash position plot
+    cash_plot = plot_generator.generate_cash_position_plot(cash_data)
+    print(f"Saved cash position plot to: {cash_plot}")
     
     roi_plot = plot_generator.generate_roi_bars_plot(current_stocks_roi)
     print(f"Saved ROI bars plot to: {roi_plot}")
@@ -151,6 +169,7 @@ def main():
         daily_performance_plot, position_analysis_plot,
         sector_analysis_plot, win_loss_plot, roi_over_time_plot,
         individual_drawdown_plot, risk_return_plot,
+        cash_plot,
         all_stocks_table_html, current_stocks_table_html, 
         summary_stats, summary_stats, volatility_metrics,
         win_loss_metrics, advanced_risk_metrics,

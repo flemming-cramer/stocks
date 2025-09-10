@@ -937,3 +937,55 @@ class PlotGenerator:
         filepath = self.save_plot(fig, "win_loss_analysis.png")
         plt.close()
         return filepath
+
+    def generate_cash_position_plot(self, cash_data) -> str:
+        """Generate and save the cash position plot with total stock value as single bar."""
+        # Extract data
+        dates = sorted(cash_data['actual_cash'].keys())
+        actual_cash = [cash_data['actual_cash'][date] for date in dates]
+        
+        # Prepare total stock values for each date
+        stock_data = cash_data['stock_values']
+        total_stock_values = []
+        
+        for date in dates:
+            date_stocks = stock_data.get(date, {})
+            total_value = sum(date_stocks.values())
+            total_stock_values.append(total_value)
+        
+        # Create stacked bar chart
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Plot cash position as base
+        bars1 = ax.bar(range(len(dates)), actual_cash, label='Cash Position', color='lightblue')
+        
+        # Plot total stock value stacked on top of cash
+        bottom_values = actual_cash.copy()
+        bars2 = ax.bar(range(len(dates)), total_stock_values, bottom=bottom_values, 
+                      label='Total Stock Value', color='lightcoral')
+        
+        # Customize the chart
+        ax.set_title("Daily Portfolio Composition (Cash + Total Stock Value)", fontsize=16, fontweight='bold')
+        ax.set_xlabel("Date", fontsize=12)
+        ax.set_ylabel("Value ($)", fontsize=12)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        # Add horizontal line at y=0
+        ax.axhline(y=0, color='black', linewidth=0.5)
+        
+        # Highlight negative cash balance if it occurs
+        negative_indices = [i for i, cash in enumerate(actual_cash) if cash < 0]
+        if negative_indices:
+            ax.scatter(negative_indices, [0]*len(negative_indices), color='red', s=100, marker='v', label='Negative Cash Balance')
+        
+        # Set x-axis labels
+        ax.set_xticks(range(len(dates)))
+        ax.set_xticklabels([date.strftime('%Y-%m-%d') for date in dates], rotation=45, ha='right')
+        
+        plt.tight_layout()
+        
+        # Save plot
+        filepath = self.save_plot(fig, "cash_position.png")
+        plt.close()
+        return filepath

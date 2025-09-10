@@ -112,6 +112,7 @@ class HTMLGenerator:
                                        daily_performance_plot: str, position_analysis_plot: str,
                                        sector_analysis_plot: str, win_loss_plot: str, roi_over_time_plot: str,
                                        individual_drawdown_plot: str, risk_return_plot: str,
+                                       cash_plot: str,
                                        all_stocks_table: str, current_stocks_table: str, 
                                        summary_stats: dict, risk_metrics: dict, volatility_metrics: dict,
                                        win_loss_metrics: dict, advanced_risk_metrics: dict,
@@ -123,7 +124,7 @@ class HTMLGenerator:
                 report_datetime = datetime.strptime(report_date, "%Y-%m-%d")
                 formatted_report_date = report_datetime.strftime('%B %d, %Y')
             except ValueError:
-                formatted_report_date = datetime.now().strftime('%B %d, %Y')
+                raise SystemExit(f"Invalid date format '{report_date}'. Use YYYY-MM-DD.")
         else:
             formatted_report_date = datetime.now().strftime('%B %d, %Y')
         
@@ -140,6 +141,7 @@ class HTMLGenerator:
         roi_over_time_plot_name = os.path.basename(roi_over_time_plot)
         individual_drawdown_plot_name = os.path.basename(individual_drawdown_plot)
         risk_return_plot_name = os.path.basename(risk_return_plot)
+        cash_plot_name = os.path.basename(cash_plot)
         
         html_content = f"""
 <!DOCTYPE html>
@@ -182,6 +184,21 @@ class HTMLGenerator:
             font-size: 1em;
             opacity: 0.8;
             margin-top: 5px;
+        }}
+        .navigation {{
+            background-color: #e9ecef;
+            padding: 15px 30px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }}
+        .navigation a {{
+            color: #1e3c72;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }}
+        .navigation a:hover {{
+            text-decoration: underline;
         }}
         .content {{
             padding: 30px;
@@ -300,6 +317,14 @@ class HTMLGenerator:
             <div class="report-date">Report Date: {formatted_report_date}</div>
         </div>
         
+        <div class="navigation">
+            <a href="#performance-analysis">Performance Analysis</a> |
+            <a href="#portfolio-composition">Portfolio Composition</a> |
+            <a href="#risk-metrics">Risk Metrics</a> |
+            <a href="#win-loss-analysis">Win/Loss Analysis</a> |
+            <a href="#detailed-position-analysis">Detailed Position Analysis</a>
+        </div>
+        
         <div class="content">
             <div class="section">
                 <h2 class="section-title">Executive Summary</h2>
@@ -335,42 +360,6 @@ class HTMLGenerator:
             </div>
             
             <div class="section">
-                <h2 class="section-title">Table of Contents</h2>
-                <ul>
-                    <li><a href="#performance-analysis">Performance Analysis</a>
-                        <ul>
-                            <li><a href="#portfolio-performance">Portfolio Performance vs. Benchmark</a></li>
-                            <li><a href="#daily-performance">Daily Performance</a></li>
-                            <li><a href="#roi-over-time">ROI Over Time</a></li>
-                            <li><a href="#individual-drawdowns">Individual Stock Drawdowns</a></li>
-                            <li><a href="#risk-return-profile">Risk-Return Profile</a></li>
-                            <li><a href="#risk-return-dashboard">Risk-Return Dashboard</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#portfolio-composition">Portfolio Composition & Allocation</a>
-                        <ul>
-                            <li><a href="#current-holdings">Current Holdings Analysis</a></li>
-                            <li><a href="#position-size">Position Size Analysis</a></li>
-                            <li><a href="#category-analysis">Category Analysis</a></li>
-                            <li><a href="#comparative-analysis">Comparative Portfolio Analysis</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#risk-metrics">Risk Metrics</a></li>
-                    <li><a href="#win-loss-analysis">Win/Loss Analysis</a>
-                        <ul>
-                            <li><a href="#win-loss-distribution">Win/Loss Distribution</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#detailed-position-analysis">Detailed Position Analysis</a>
-                        <ul>
-                            <li><a href="#all-stocks">All Stocks Ever Purchased</a></li>
-                            <li><a href="#currently-held">Currently Held Stocks</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            
-            <div class="section">
                 <h2 class="section-title" id="performance-analysis">Performance Analysis</h2>
                 
                 <h3 class="subsection-title" id="portfolio-performance">Portfolio Performance vs. Benchmark</h3>
@@ -401,6 +390,19 @@ class HTMLGenerator:
                 <h3 class="subsection-title" id="risk-return-dashboard">Risk-Return Dashboard</h3>
                 <div class="plot-container">
                     <img src="{roi_drawdown_plot_name}" alt="ROI Analysis Dashboard">
+                </div>
+                
+                <!-- Add Cash Position Analysis section -->
+                <h3 class="subsection-title" id="cash-position">Cash Position Analysis</h3>
+                <div class="plot-container">
+                    <img src="{cash_plot_name}" alt="Cash Position">
+                    <p class="mt-3">
+                        This chart shows the daily portfolio composition as a stacked bar chart, combining cash position and total stock market value.
+                        Each bar represents a trading day, with the cash position at the base and the total value of all stocks stacked on top.
+                        Value labels show the cash amount, stock value, and total portfolio value for each day.
+                        Negative cash balances indicate either additional cash was added during the period or
+                        trades were executed with margin/borrowed funds.
+                    </p>
                 </div>
             </div>
             
