@@ -24,7 +24,7 @@ class MarkdownGenerator(ReportGenerator):
         markdown_content += self._render_footer(content)
         
         # Save the markdown file
-        md_path = self.reports_dir / "report.md"
+        md_path = self.reports_dir / "index.md"
         with open(md_path, "w") as f:
             f.write(markdown_content)
         return str(md_path)

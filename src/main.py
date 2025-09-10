@@ -267,7 +267,7 @@ def main():
     
     print(f"\nReports saved to: {reports_dir}")
     print("Open 'index.html' in your browser to view the full professional report.")
-    print("Open 'report.md' to view the Markdown version of the report.")
+    print("Open 'index.md' to view the Markdown version of the report.")
 
 
 if __name__ == "__main__":
