@@ -771,21 +771,25 @@ class PlotGenerator:
         ax1.axvline(x=0, color='black', linewidth=0.5)
         
         # Position distribution
-        if "ROI (%)" in roi_df.columns and "Market Value ($)" in roi_df.columns and "Ticker" in roi_df.columns:
-            positive_roi = roi_df[roi_df["ROI (%)"] >= 0]
-            negative_roi = roi_df[roi_df["ROI (%)"] < 0]
+        if "ROI (%)" in roi_df.columns and "Ticker" in roi_df.columns:
+            # Show all stocks with color coding for positive/negative ROI
+            colors = ['green' if roi >= 0 else 'red' for roi in roi_df["ROI (%)"]]
             
-            ax2.bar(positive_roi["Ticker"], positive_roi["Market Value ($)"], 
-                    color='green', label='Positive ROI', alpha=0.7)
-            ax2.bar(negative_roi["Ticker"], negative_roi["Market Value ($)"], 
-                    color='red', label='Negative ROI', alpha=0.7)
+            ax2.bar(roi_df["Ticker"], roi_df["Market Value ($)"] + roi_df["Realized Proceeds ($)"],
+                    color=colors, alpha=0.7)
             ax2.set_title("Portfolio Allocation by ROI", fontsize=14, fontweight='bold')
             ax2.set_xlabel("Stock Ticker")
-            ax2.set_ylabel("Position Value ($)")
-            ax2.legend()
-            ax2.set_xticks(range(len(roi_df["Ticker"])))  # Set tick positions first
+            ax2.set_ylabel("Realized Proceeds + Market Value ($)")
+            # Set tick positions and labels
+            ax2.set_xticks(range(len(roi_df["Ticker"])))
             ax2.set_xticklabels(roi_df["Ticker"], rotation=45, ha='right')
             ax2.grid(True, axis='y', alpha=0.3)
+            
+            # Add a legend to explain the color coding
+            from matplotlib.patches import Patch
+            legend_elements = [Patch(facecolor='green', label='Positive ROI'),
+                              Patch(facecolor='red', label='Negative ROI')]
+            ax2.legend(handles=legend_elements)
         else:
             ax2.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax2.transAxes)
             ax2.set_title("Portfolio Allocation by ROI", fontsize=14, fontweight='bold')
