@@ -14,6 +14,8 @@ from analysis.performance_analyzer import PerformanceAnalyzer
 from analysis.cash_analyzer import CashAnalyzer
 from visualization.plot_generator import PlotGenerator
 from visualization.html_generator import HTMLGenerator
+from visualization.markdown_generator import MarkdownGenerator
+from visualization.report_generator import ReportContent
 from utils.helpers import download_sp500
 from pathlib import Path
 
@@ -46,6 +48,7 @@ def main():
     # Initialize generators
     plot_generator = PlotGenerator(reports_dir)
     html_generator = HTMLGenerator(reports_dir)
+    markdown_generator = MarkdownGenerator(reports_dir)
     
     # Perform analyses
     current_stocks_roi = roi_analyzer.calculate_stock_roi(portfolio_df)
@@ -162,7 +165,7 @@ def main():
     all_stocks_table_html = html_generator.dataframe_to_html_table(all_stocks_display, "All Stocks Ever Purchased ROI Analysis")
     current_stocks_table_html = html_generator.dataframe_to_html_table(current_stocks_display, "Currently Held Stocks ROI Analysis")
     
-    # Generate HTML report
+    # Generate HTML report (existing method for backward compatibility)
     html_generator.generate_professional_index_html(
         performance_plot, roi_plot, composition_plot, 
         roi_drawdown_plot, comparative_plot,
@@ -176,6 +179,63 @@ def main():
         args.date
     )
     print(f"Saved professional index.html to: {reports_dir / 'index.html'}")
+    
+    # Create ReportContent object for new template system
+    report_content = ReportContent(args.date)
+    
+    # Set metrics for the report
+    report_content.set_metrics({
+        'summary_stats': summary_stats,
+        'volatility_metrics': volatility_metrics,
+        'win_loss_metrics': win_loss_metrics
+    })
+    
+    # Add sections to the report
+    # Performance Analysis Section
+    performance_content = [
+        {'type': 'plot', 'title': 'Portfolio Performance vs. Benchmark', 'path': performance_plot},
+        {'type': 'plot', 'title': 'Daily Performance', 'path': daily_performance_plot},
+        {'type': 'plot', 'title': 'ROI Over Time', 'path': roi_over_time_plot},
+        {'type': 'plot', 'title': 'Individual Stock Drawdowns', 'path': individual_drawdown_plot},
+        {'type': 'plot', 'title': 'Risk-Return Profile', 'path': risk_return_plot},
+        {'type': 'plot', 'title': 'Risk-Return Dashboard', 'path': roi_drawdown_plot},
+        {'type': 'plot', 'title': 'Cash Position Analysis', 'path': cash_plot},
+        {'type': 'text', 'text': 'This chart shows the daily portfolio composition as a stacked bar chart, combining cash position and total stock market value. Each bar represents a trading day, with the cash position at the base and the total value of all stocks stacked on top. Value labels show the cash amount, stock value, and total portfolio value for each day. Negative cash balances indicate either additional cash was added during the period or trades were executed with margin/borrowed funds.'}
+    ]
+    report_content.add_section('performance-analysis', 'Performance Analysis', performance_content)
+    
+    # Portfolio Composition Section
+    composition_content = [
+        {'type': 'plot', 'title': 'Current Holdings Analysis', 'path': composition_plot},
+        {'type': 'plot', 'title': 'Position Size Analysis', 'path': position_analysis_plot},
+        {'type': 'plot', 'title': 'Category Analysis', 'path': sector_analysis_plot},
+        {'type': 'plot', 'title': 'Comparative Portfolio Analysis', 'path': comparative_plot}
+    ]
+    report_content.add_section('portfolio-composition', 'Portfolio Composition & Allocation', composition_content)
+    
+    # Risk Metrics Section
+    report_content.add_section('risk-metrics', 'Risk Metrics', [])
+    
+    # Win/Loss Analysis Section
+    win_loss_content = [
+        {'type': 'plot', 'title': 'Win/Loss Distribution', 'path': win_loss_plot}
+    ]
+    report_content.add_section('win-loss-analysis', 'Win/Loss Analysis', win_loss_content)
+    
+    # Detailed Position Analysis Section
+    position_content = [
+        {'type': 'table', 'title': 'All Stocks Ever Purchased', 'data': all_stocks_display},
+        {'type': 'table', 'title': 'Currently Held Stocks', 'data': current_stocks_display}
+    ]
+    report_content.add_section('detailed-position-analysis', 'Detailed Position Analysis', position_content)
+    
+    # Generate HTML report using new template system
+    html_report_path = html_generator.generate_report(report_content)
+    print(f"Saved HTML report to: {html_report_path}")
+    
+    # Generate Markdown report
+    markdown_report_path = markdown_generator.generate_report(report_content)
+    print(f"Saved Markdown report to: {markdown_report_path}")
     
     # Print summary to console
     print("\n" + "="*80)
@@ -207,6 +267,7 @@ def main():
     
     print(f"\nReports saved to: {reports_dir}")
     print("Open 'index.html' in your browser to view the full professional report.")
+    print("Open 'report.md' to view the Markdown version of the report.")
 
 
 if __name__ == "__main__":

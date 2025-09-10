@@ -6,13 +6,14 @@ import pandas as pd
 from pathlib import Path
 import os
 from datetime import datetime
+from .report_generator import ReportGenerator, ReportContent
 
 
-class HTMLGenerator:
+class HTMLGenerator(ReportGenerator):
     """Generator for HTML reports."""
     
     def __init__(self, reports_dir: Path):
-        self.reports_dir = reports_dir
+        super().__init__(reports_dir)
     
     @staticmethod
     def create_reports_directory(report_date: str = None) -> Path:
@@ -548,3 +549,299 @@ class HTMLGenerator:
         index_path = self.reports_dir / "index.html"
         with open(index_path, "w") as f:
             f.write(html_content)
+    
+    def generate_report(self, content: ReportContent) -> str:
+        """Generate an HTML report from the provided content."""
+        # This method will replace the generate_professional_index_html method
+        html_content = self._render_header(content)
+        html_content += self._render_navigation(content)
+        html_content += self._render_executive_summary(content)
+        html_content += self._render_sections(content)
+        html_content += self._render_footer(content)
+        
+        # Wrap everything in HTML document structure
+        full_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Micro Cap Experiment - Professional Financial Report</title>
+    <style>
+        body {{
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }}
+        .header p {{
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin: 10px 0 0;
+        }}
+        .report-date {{
+            font-size: 1em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }}
+        .navigation {{
+            background-color: #e9ecef;
+            padding: 15px 30px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }}
+        .navigation a {{
+            color: #1e3c72;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }}
+        .navigation a:hover {{
+            text-decoration: underline;
+        }}
+        .content {{
+            padding: 30px;
+        }}
+        .section {{
+            margin: 40px 0;
+        }}
+        .section-title {{
+            color: #1e3c72;
+            border-bottom: 2px solid #1e3c72;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 300;
+        }}
+        .subsection-title {{
+            color: #2a5298;
+            margin: 25px 0 15px;
+            font-size: 1.4em;
+            font-weight: 300;
+        }}
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }}
+        .metric-card {{
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }}
+        .metric-value {{
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }}
+        .metric-title {{
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }}
+        .positive {{
+            color: #28a745;
+        }}
+        .negative {{
+            color: #dc3545;
+        }}
+        .plot-container {{
+            text-align: center;
+            margin: 30px 0;
+        }}
+        .plot-container img {{
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }}
+        th, td {{
+            border: 1px solid #dee2e6;
+            padding: 12px 15px;
+            text-align: right;
+        }}
+        th {{
+            background-color: #e9ecef;
+            font-weight: 600;
+            text-align: center;
+        }}
+        tr:nth-child(even) {{
+            background-color: #f8f9fa;
+        }}
+        tr:hover {{
+            background-color: #e9ecef;
+        }}
+        .footer {{
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+            border-top: 1px solid #dee2e6;
+        }}
+        .disclaimer {{
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }}
+        @media (max-width: 768px) {{
+            .metrics-grid {{
+                grid-template-columns: 1fr;
+            }}
+            .content {{
+                padding: 15px;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        {html_content}
+    </div>
+</body>
+</html>"""
+        
+        index_path = self.reports_dir / "index.html"
+        with open(index_path, "w") as f:
+            f.write(full_html)
+        return str(index_path)
+    
+    def _render_header(self, content: ReportContent) -> str:
+        """Render the report header."""
+        # Format the report date for display
+        try:
+            report_datetime = datetime.strptime(content.report_date, "%Y-%m-%d")
+            formatted_report_date = report_datetime.strftime('%B %d, %Y')
+        except ValueError:
+            formatted_report_date = datetime.now().strftime('%B %d, %Y')
+            
+        return f"""<div class="header">
+            <h1>{content.title}</h1>
+            <p>{content.subtitle}</p>
+            <div class="report-date">Report Date: {formatted_report_date}</div>
+        </div>"""
+    
+    def _render_navigation(self, content: ReportContent) -> str:
+        """Render the navigation section."""
+        nav_links = []
+        for section in content.sections:
+            # Convert section title to lowercase and replace spaces with hyphens for anchor links
+            anchor = section['title'].lower().replace(' ', '-').replace('/', '-').replace('&', 'and')
+            nav_links.append(f'<a href="#{anchor}">{section["title"]}</a>')
+        
+        nav_html = " | ".join(nav_links)
+        return f"""<div class="navigation">
+            {nav_html}
+        </div>"""
+    
+    def _render_executive_summary(self, content: ReportContent) -> str:
+        """Render the executive summary section."""
+        # Extract metrics for the summary
+        summary_stats = content.metrics.get('summary_stats', {})
+        volatility_metrics = content.metrics.get('volatility_metrics', {})
+        win_loss_metrics = content.metrics.get('win_loss_metrics', {})
+        
+        return f"""<div class="content">
+            <div class="section">
+                <h2 class="section-title">Executive Summary</h2>
+                <div class="disclaimer">
+                    <strong>Disclaimer:</strong> {content.disclaimer}
+                </div>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Total Portfolio Value</div>
+                        <div class="metric-value">${summary_stats.get('total_value', 0):.2f}</div>
+                        <div>Current Value</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Total Return</div>
+                        <div class="metric-value {'positive' if summary_stats.get('overall_roi', 0) >= 0 else 'negative'}">
+                            {summary_stats.get('overall_roi', 0):.2f}%
+                        </div>
+                        <div>({'$+' if summary_stats.get('absolute_gain', 0) >= 0 else '$'}{summary_stats.get('absolute_gain', 0):.2f})</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Annualized Volatility</div>
+                        <div class="metric-value">{volatility_metrics.get('annualized_volatility', 0):.2f}%</div>
+                        <div>Risk Metric</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Sharpe Ratio</div>
+                        <div class="metric-value">{volatility_metrics.get('sharpe_ratio', 0):.2f}</div>
+                        <div>Risk-Adjusted Return</div>
+                    </div>
+                </div>
+            </div>"""
+    
+    def _render_sections(self, content: ReportContent) -> str:
+        """Render all sections of the report."""
+        sections_html = ""
+        
+        for section in content.sections:
+            # Convert section title to lowercase and replace spaces with hyphens for anchor links
+            anchor = section['title'].lower().replace(' ', '-').replace('/', '-').replace('&', 'and')
+            
+            section_html = f"""<div class="section">
+                <h2 class="section-title" id="{anchor}">{section['title']}</h2>"""
+            
+            # Render section content
+            for item in section['content']:
+                if item['type'] == 'plot':
+                    plot_name = os.path.basename(item['path'])
+                    section_html += f"""
+                <h3 class="subsection-title">{item['title']}</h3>
+                <div class="plot-container">
+                    <img src="{plot_name}" alt="{item['title']}">
+                </div>"""
+                elif item['type'] == 'table':
+                    table_html = self.dataframe_to_html_table(item['data'], item['title'])
+                    section_html += f"""
+                {table_html}"""
+                elif item['type'] == 'text':
+                    section_html += f"""
+                <p>{item['text']}</p>"""
+            
+            section_html += """
+            </div>"""
+            sections_html += section_html
+        
+        return sections_html
+    
+    def _render_footer(self, content: ReportContent) -> str:
+        """Render the report footer."""
+        return f"""<div class="footer">
+            <p>ChatGPT Micro Cap Experiment | Professional Financial Report | Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p>This report is automatically generated and should be reviewed by a qualified financial professional before making investment decisions.</p>
+        </div>"""
