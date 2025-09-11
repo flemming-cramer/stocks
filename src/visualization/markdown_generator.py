@@ -173,7 +173,7 @@ class MarkdownGenerator(ReportGenerator):
             # Check if this is a TOTAL row
             if str(row.iloc[0]).strip() == "TOTAL":
                 # Format the TOTAL row with bold styling
-                formatted_row = "| **" + " **| **".join(str(val) for val in row) + " **|\n"
+                formatted_row = "|**" + "**|**".join(str(val) for val in row) + "**|\n"
                 markdown_table += formatted_row
             else:
                 markdown_table += "| " + " | ".join(str(val) for val in row) + " |\n"
