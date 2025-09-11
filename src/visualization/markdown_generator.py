@@ -67,7 +67,6 @@ class MarkdownGenerator(ReportGenerator):
                     toc += f"  - [{item['title']}](#{sub_anchor})\n"
         
         # Add footer
-        toc += "- [Footer](#footer)\n\n"
         toc += "---\n\n"
         
         return toc
