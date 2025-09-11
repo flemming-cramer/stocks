@@ -9,7 +9,7 @@ import numpy as np
 class RiskAnalyzer:
     """Analyzer for risk metrics calculations."""
     
-    def calculate_risk_metrics(self, portfolio_df: pd.DataFrame, drawdown_data: dict) -> dict:
+    def calculate_risk_metrics(self, portfolio_df: pd.DataFrame, drawdown_data: dict, current_cash_balance: float = 0.0) -> dict:
         """Calculate additional risk metrics for the portfolio."""
         # Check if required columns exist
         has_required_columns = ("Cost Basis ($)" in portfolio_df.columns and "Market Value ($)" in portfolio_df.columns)
@@ -17,23 +17,27 @@ class RiskAnalyzer:
         # Calculate portfolio-level metrics
         if has_required_columns and not portfolio_df.empty:
             total_cost = portfolio_df["Cost Basis ($)"].sum()
-            total_value = portfolio_df["Market Value ($)"].sum()
+            market_value = portfolio_df["Market Value ($)"].sum()
+            
+            # Adjust total value to include cash
+            adjusted_total_value = market_value + current_cash_balance
             
             # Check if Realized Proceeds column exists and include it in ROI calculation
             if "Realized Proceeds ($)" in portfolio_df.columns:
                 total_proceeds = portfolio_df["Realized Proceeds ($)"].sum()
-                # Correct formula: ROI = ((Proceeds + Market Value) / Cost Basis - 1) * 100
-                overall_roi = ((total_proceeds + total_value) / total_cost - 1) * 100 if total_cost > 0 else 0
-                absolute_gain = total_proceeds + total_value - total_cost
+                # Correct formula: ROI = ((Proceeds + Market Value + Cash) / Cost Basis - 1) * 100
+                overall_roi = ((total_proceeds + market_value) / total_cost - 1) * 100 if total_cost > 0 else 0
+                absolute_gain = total_proceeds + market_value - total_cost
             else:
                 # Fallback to original calculation if Realized Proceeds column doesn't exist
-                overall_roi = ((total_value / total_cost) - 1) * 100 if total_cost > 0 else 0
-                absolute_gain = total_value - total_cost
+                overall_roi = ((adjusted_total_value / total_cost) - 1) * 100 if total_cost > 0 else 0
+                absolute_gain = adjusted_total_value - total_cost
         else:
             total_cost = 0
-            total_value = 0
+            market_value = 0
+            adjusted_total_value = current_cash_balance  # When no stocks, total value is just cash
             overall_roi = 0
-            absolute_gain = 0
+            absolute_gain = adjusted_total_value
         
         # Calculate average drawdown
         if drawdown_data:
@@ -62,7 +66,7 @@ class RiskAnalyzer:
         
         return {
             'total_cost': total_cost,
-            'total_value': total_value,
+            'total_value': adjusted_total_value,  # Now includes cash
             'overall_roi': overall_roi,
             'absolute_gain': absolute_gain,
             'avg_drawdown': avg_drawdown,
@@ -70,7 +74,8 @@ class RiskAnalyzer:
             'worst_drawdown_value': worst_drawdown_value,
             'best_drawdown_ticker': best_drawdown_ticker,
             'best_drawdown_value': best_drawdown_value,
-            'significant_drawdown_count': significant_drawdown_count
+            'significant_drawdown_count': significant_drawdown_count,
+            'current_cash_balance': current_cash_balance
         }
     
     def calculate_portfolio_volatility(self, portfolio_totals: pd.DataFrame) -> dict:

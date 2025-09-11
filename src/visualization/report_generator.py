@@ -35,6 +35,15 @@ class ReportContent:
         """Set the metrics for the executive summary."""
         self.metrics = metrics
         
+    def set_risk_metrics(self, risk_metrics: Dict[str, Any], advanced_risk_metrics: Dict[str, Any]):
+        """Set the risk metrics for the risk metrics section."""
+        self.metrics['risk_metrics'] = risk_metrics
+        self.metrics['advanced_risk_metrics'] = advanced_risk_metrics
+        
+    def set_win_loss_metrics(self, win_loss_metrics: Dict[str, Any]):
+        """Set the win/loss metrics for the win/loss analysis section."""
+        self.metrics['win_loss_metrics'] = win_loss_metrics
+        
     def add_plot(self, plot_id: str, title: str, path: str):
         """Add a plot to the report."""
         self.plots[plot_id] = {

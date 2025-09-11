@@ -55,6 +55,10 @@ def main():
     all_stocks_roi = roi_analyzer.calculate_all_stocks_roi(portfolio_df, trade_df)
     current_portfolio_roi = roi_analyzer.calculate_current_portfolio_roi(portfolio_df)
     
+    # For separate ROI calculation, we need the portfolio data including TOTAL rows
+    portfolio_df_with_totals = pd.concat([portfolio_df, portfolio_totals], ignore_index=True)
+    separate_portfolio_roi = roi_analyzer.calculate_separate_portfolio_roi(portfolio_df_with_totals)
+    
     drawdown_data = drawdown_analyzer.calculate_all_drawdowns(portfolio_df)
     
     # Calculate daily performance
@@ -95,7 +99,7 @@ def main():
     print(f"Saved portfolio composition plot to: {composition_plot}")
     
     # Generate additional plots
-    roi_drawdown_plot = plot_generator.generate_roi_drawdown_dashboard(current_stocks_roi, drawdown_data)
+    roi_drawdown_plot = plot_generator.generate_roi_drawdown_dashboard(current_stocks_roi, drawdown_data, all_stocks_roi)
     print(f"Saved ROI/Drawdown dashboard to: {roi_drawdown_plot}")
     
     comparative_plot = plot_generator.generate_comparative_roi_dashboard(all_stocks_roi, current_portfolio_roi)
@@ -129,11 +133,78 @@ def main():
     risk_return_plot = plot_generator.generate_risk_return_plot(portfolio_totals)
     print(f"Saved risk-return plot to: {risk_return_plot}")
     
-    # Calculate portfolio-level metrics
-    summary_stats = risk_analyzer.calculate_risk_metrics(all_stocks_roi, drawdown_data)
+    # Get the latest cash balance from portfolio data
+    latest_portfolio_data = portfolio_loader.load_portfolio_totals(args.date)
+    latest_entry = latest_portfolio_data.iloc[-1]
+    current_cash_balance = latest_entry['Cash Balance'] if not latest_portfolio_data.empty and 'Cash Balance' in latest_entry else 0.0
+    total_portfolio_value = latest_entry['Total Equity'] if not latest_portfolio_data.empty and 'Total Equity' in latest_entry else 0.0
+
+    # Calculate portfolio-level metrics with cash balance
+    summary_stats = risk_analyzer.calculate_risk_metrics(all_stocks_roi, drawdown_data, current_cash_balance)
+    
+    # Add separate ROI to summary stats
+    summary_stats['separate_roi_pct'] = separate_portfolio_roi['separate_roi_pct']
+    
+    # Add cash balance to summary stats (already included in calculate_risk_metrics, but keeping for backward compatibility)
+    summary_stats['cash_balance'] = current_cash_balance
     
     # Calculate volatility metrics
     volatility_metrics = risk_analyzer.calculate_portfolio_volatility(portfolio_totals)
+    
+    def add_totals_row(df):
+        """Add a totals row to a DataFrame with financial data."""
+        if df.empty or len(df.columns) <= 1:
+            return df
+        
+        # Create totals row
+        totals_row = {}
+        for col in df.columns:
+            if col == "Ticker":
+                totals_row[col] = "TOTAL"
+            elif col == "Shares":
+                # Sum shares
+                try:
+                    total = df[col].astype(float).sum()
+                    totals_row[col] = f"{total:.1f}"
+                except:
+                    totals_row[col] = "-"
+            elif col == "ROI (%)":
+                # For ROI, we'll calculate a weighted average based on Cost Basis ($)
+                if "Cost Basis ($)" in df.columns and "Realized Proceeds ($)" in df.columns and "Market Value ($)" in df.columns:
+                    # Convert formatted strings back to numbers
+                    try:
+                        cost_basis_nums = df["Cost Basis ($)"].str.replace('$', '').str.replace(',', '').astype(float)
+                        proceeds_nums = df["Realized Proceeds ($)"].str.replace('$', '').str.replace(',', '').astype(float)
+                        market_value_nums = df["Market Value ($)"].str.replace('$', '').str.replace(',', '').astype(float)
+                        total_cost = cost_basis_nums.sum()
+                        total_proceeds = proceeds_nums.sum()
+                        total_market_value = market_value_nums.sum()
+                        if total_cost > 0:
+                            # Correct formula: ROI = ((Proceeds + Market Value) / Cost Basis - 1) * 100
+                            weighted_roi = ((total_proceeds + total_market_value) / total_cost - 1) * 100
+                            totals_row[col] = f"{weighted_roi:.2f}%"
+                        else:
+                            totals_row[col] = "0.00%"
+                    except:
+                        totals_row[col] = "-"
+                else:
+                    totals_row[col] = "-"
+            else:
+                # For other numeric columns, sum them up
+                try:
+                    # Convert formatted strings back to numbers
+                    if col in df.columns:
+                        numeric_values = df[col].str.replace('$', '').str.replace(',', '').astype(float)
+                        total = numeric_values.sum()
+                        totals_row[col] = f"${total:.2f}"
+                    else:
+                        totals_row[col] = "-"
+                except:
+                    totals_row[col] = "-"
+        
+        # Add the totals row to the dataframe
+        totals_df = pd.DataFrame([totals_row])
+        return pd.concat([df, totals_df], ignore_index=True)
     
     # Format all stocks ROI table
     all_stocks_display = all_stocks_roi.copy()
@@ -147,6 +218,8 @@ def main():
     all_stocks_display["Market Value ($)"] = all_stocks_display["Market Value ($)"].apply(lambda x: f"${x:.2f}")
     all_stocks_display["ROI (%)"] = all_stocks_display["ROI (%)"].apply(lambda x: f"{x:.2f}%")
     all_stocks_display["Net Gain/Loss ($)"] = all_stocks_display["Net Gain/Loss ($)"].apply(lambda x: f"${x:.2f}")
+    # Add totals row
+    all_stocks_display = add_totals_row(all_stocks_display)
     
     # Format current portfolio ROI table
     current_stocks_display = current_portfolio_roi.copy()
@@ -160,6 +233,13 @@ def main():
     current_stocks_display["Market Value ($)"] = current_stocks_display["Market Value ($)"].apply(lambda x: f"${x:.2f}")
     current_stocks_display["ROI (%)"] = current_stocks_display["ROI (%)"].apply(lambda x: f"{x:.2f}%")
     current_stocks_display["Net Gain/Loss ($)"] = current_stocks_display["Net Gain/Loss ($)"].apply(lambda x: f"${x:.2f}")
+    # Add totals row
+    current_stocks_display = add_totals_row(current_stocks_display)
+    
+    # Calculate invested value (holdings) - market value of currently held stocks
+    # Extract numeric values from the formatted Market Value column (excluding the TOTAL row)
+    market_values = current_stocks_display[:-1]["Market Value ($)"].str.replace('$', '').str.replace(',', '').astype(float)
+    current_holdings_market_value = market_values.sum()
     
     # Convert to HTML tables
     all_stocks_table_html = html_generator.dataframe_to_html_table(all_stocks_display, "All Stocks Ever Purchased ROI Analysis")
@@ -184,11 +264,16 @@ def main():
     report_content = ReportContent(args.date)
     
     # Set metrics for the report
+    summary_stats['invested_value_holdings'] = current_holdings_market_value
     report_content.set_metrics({
         'summary_stats': summary_stats,
         'volatility_metrics': volatility_metrics,
         'win_loss_metrics': win_loss_metrics
     })
+    
+    # Set risk metrics for the report
+    report_content.set_risk_metrics(summary_stats, advanced_risk_metrics)
+    report_content.set_win_loss_metrics(win_loss_metrics)
     
     # Add sections to the report
     # Performance Analysis Section
@@ -252,7 +337,8 @@ def main():
         formatted_report_date = datetime.now().strftime('%Y-%m-%d')
     print(f"Report Date: {formatted_report_date}")
     print(f"Total Portfolio Value: ${summary_stats['total_value']:.2f}")
-    print(f"Total Return: {summary_stats['overall_roi']:.2f}% ({ '$+' if summary_stats['absolute_gain'] >= 0 else '$' }{summary_stats['absolute_gain']:.2f})")
+    print(f"Trade ROI: {summary_stats['overall_roi']:.2f}% ({ '+$' if summary_stats['absolute_gain'] >= 0 else '-$' }{abs(summary_stats['absolute_gain']):.2f})")
+    print(f"Portfolio ROI: {summary_stats['separate_roi_pct']:.2f}%")
     print(f"Annualized Volatility: {volatility_metrics['annualized_volatility']:.2f}%")
     print(f"Sharpe Ratio: {volatility_metrics['sharpe_ratio']:.2f}")
     print(f"Win Rate: {win_loss_metrics['win_rate']:.1f}% ({win_loss_metrics['winning_positions']}/{win_loss_metrics['total_positions']})")

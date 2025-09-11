@@ -210,3 +210,43 @@ class ROIAnalyzer:
                 })
         
         return pd.DataFrame(roi_data).sort_values("ROI (%)", ascending=False)
+    
+    def calculate_separate_portfolio_roi(self, portfolio_df: pd.DataFrame, initial_cash: float = 100.0) -> dict:
+        """
+        Calculate separate portfolio ROI as adjusted_total_value / initial_cash.
+        
+        Args:
+            portfolio_df: DataFrame with portfolio data
+            initial_cash: Initial cash investment (default $100.0)
+            
+        Returns:
+            dict: Separate ROI metrics
+        """
+        # Get the latest portfolio data (most recent date)
+        latest_date = portfolio_df["Date"].max()
+        latest_data = portfolio_df[portfolio_df["Date"] == latest_date]
+        
+        # Find the TOTAL row which contains portfolio summary
+        total_row = latest_data[latest_data["Ticker"] == "TOTAL"]
+        
+        if len(total_row) > 0 and initial_cash > 0:
+            total_equity = total_row.iloc[0]["Total Equity"]
+            adjusted_total_value = float(total_equity) if pd.notna(total_equity) else 0.0
+            
+            # Calculate separate ROI
+            separate_roi = (adjusted_total_value / initial_cash) - 1.0
+            separate_roi_pct = separate_roi * 100
+            
+            return {
+                "adjusted_total_value": adjusted_total_value,
+                "initial_cash": initial_cash,
+                "separate_roi": separate_roi,
+                "separate_roi_pct": separate_roi_pct
+            }
+        
+        return {
+            "adjusted_total_value": 0.0,
+            "initial_cash": initial_cash,
+            "separate_roi": 0.0,
+            "separate_roi_pct": 0.0
+        }

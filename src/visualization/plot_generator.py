@@ -211,7 +211,7 @@ class PlotGenerator:
         plt.close()
         return filepath
     
-    def generate_roi_drawdown_dashboard(self, roi_df: pd.DataFrame, drawdown_data: dict) -> str:
+    def generate_roi_drawdown_dashboard(self, roi_df: pd.DataFrame, drawdown_data: dict, all_stocks_roi: pd.DataFrame = None) -> str:
         """Create a comprehensive dashboard showing both ROI and drawdown metrics."""
         # Create a figure with subplots
         fig = plt.figure(figsize=(20, 15))
@@ -219,7 +219,7 @@ class PlotGenerator:
         # Check if we have data
         if roi_df.empty or not drawdown_data:
             # Create empty plots with messages
-            for i in range(1, 7):
+            for i in range(1, 5):
                 ax = plt.subplot(2, 3, i)
                 ax.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax.transAxes)
                 ax.set_title(f"Chart {i}", fontsize=14, fontweight='bold')
@@ -228,13 +228,13 @@ class PlotGenerator:
             required_columns = ["Ticker", "ROI (%)"]
             if not all(col in roi_df.columns for col in required_columns):
                 # Create empty plots with messages
-                for i in range(1, 7):
+                for i in range(1, 5):
                     ax = plt.subplot(2, 3, i)
                     ax.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax.transAxes)
                     ax.set_title(f"Chart {i}", fontsize=14, fontweight='bold')
             else:
                 # Merge ROI and drawdown data
-                combined_data = roi_df.copy()
+                combined_data = all_stocks_roi.copy()
                 
                 # Check if Ticker column exists before mapping
                 if "Ticker" in combined_data.columns:
@@ -354,17 +354,63 @@ class PlotGenerator:
                     ax4.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax4.transAxes)
                     ax4.set_title("ROI vs ROI/Drawdown Ratio", fontsize=14, fontweight='bold')
                 
-                # 5. Bar chart of ROI for all stocks ever purchased
-                # We'll need to pass all_stocks_roi to this method for full implementation
-                ax5 = plt.subplot(2, 3, 5)
-                ax5.text(0.5, 0.5, "Data not available", ha='center', va='center', transform=ax5.transAxes)
-                ax5.set_title("ROI by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
-                
-                # 6. Bar chart of Max Drawdown for all stocks ever purchased
-                ax6 = plt.subplot(2, 3, 6)
-                ax6.text(0.5, 0.5, "Data not available", ha='center', va='center', transform=ax6.transAxes)
-                ax6.set_title("Max Drawdown by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
-        
+                # # 5. Bar chart of ROI for all stocks ever purchased
+                # ax5 = plt.subplot(2, 3, 5)
+                # if all_stocks_roi is not None and not all_stocks_roi.empty and "ROI (%)" in all_stocks_roi.columns and "Ticker" in all_stocks_roi.columns:
+                #     colors = ['green' if roi >= 0 else 'red' for roi in all_stocks_roi["ROI (%)"]]
+                #     bars = ax5.bar(range(len(all_stocks_roi)), all_stocks_roi["ROI (%)"], color=colors)
+                #     ax5.set_title("ROI by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
+                #     ax5.set_xlabel("Stock Ticker")
+                #     ax5.set_ylabel("ROI (%)")
+                #     ax5.set_xticks(range(len(all_stocks_roi)))
+                #     ax5.set_xticklabels(all_stocks_roi["Ticker"], rotation=45, ha='right')
+                #
+                #     # Add value labels on bars
+                #     for i, (bar, roi) in enumerate(zip(bars, all_stocks_roi["ROI (%)"])):
+                #         height = bar.get_height()
+                #         ax5.text(bar.get_x() + bar.get_width()/2., height + (1 if height >= 0 else -3),
+                #                 f'{roi:.1f}%', ha='center', va='bottom' if height >= 0 else 'top', fontsize=8)
+                #
+                #     ax5.grid(True, axis='y', alpha=0.3)
+                #     ax5.axhline(y=0, color='black', linewidth=0.5)
+                # else:
+                #     ax5.text(0.5, 0.5, "Data not available", ha='center', va='center', transform=ax5.transAxes)
+                #     ax5.set_title("ROI by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
+                #
+                # # 6. Bar chart of Max Drawdown for all stocks ever purchased
+                # ax6 = plt.subplot(2, 3, 6)
+                # if all_stocks_roi is not None and not all_stocks_roi.empty and "Ticker" in all_stocks_roi.columns:
+                #     # Map drawdown data to all_stocks_roi
+                #     all_stocks_drawdown = all_stocks_roi.copy()
+                #     if isinstance(drawdown_data, dict):
+                #         all_stocks_drawdown["Max Drawdown (%)"] = all_stocks_drawdown["Ticker"].map(
+                #             {ticker: data["Max Drawdown (%)"] for ticker, data in drawdown_data.items()}
+                #         )
+                #
+                #     if "Max Drawdown (%)" in all_stocks_drawdown.columns:
+                #         colors = ['red' if drawdown < 0 else 'green' for drawdown in all_stocks_drawdown["Max Drawdown (%)"]]
+                #         bars = ax6.bar(range(len(all_stocks_drawdown)), all_stocks_drawdown["Max Drawdown (%)"], color=colors)
+                #         ax6.set_title("Max Drawdown by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
+                #         ax6.set_xlabel("Stock Ticker")
+                #         ax6.set_ylabel("Max Drawdown (%)")
+                #         ax6.set_xticks(range(len(all_stocks_drawdown)))
+                #         ax6.set_xticklabels(all_stocks_drawdown["Ticker"], rotation=45, ha='right')
+                #
+                #         # Add value labels on bars
+                #         for i, (bar, drawdown) in enumerate(zip(bars, all_stocks_drawdown["Max Drawdown (%)"])):
+                #             height = bar.get_height()
+                #             ax6.text(bar.get_x() + bar.get_width()/2., height + (1 if height >= 0 else -3),
+                #                     f'{drawdown:.1f}%', ha='center', va='bottom' if height >= 0 else 'top', fontsize=8)
+                #
+                #         ax6.grid(True, axis='y', alpha=0.3)
+                #         ax6.axhline(y=0, color='black', linewidth=0.5)
+                #     else:
+                #         ax6.text(0.5, 0.5, "Drawdown data not available", ha='center', va='center', transform=ax6.transAxes)
+                #         ax6.set_title("Max Drawdown by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
+                # else:
+                #     ax6.text(0.5, 0.5, "Data not available", ha='center', va='center', transform=ax6.transAxes)
+                #     ax6.set_title("Max Drawdown by Stock (All Stocks Ever Purchased)", fontsize=14, fontweight='bold')
+                #
         plt.tight_layout()
         
         # Save plot
@@ -965,7 +1011,7 @@ class PlotGenerator:
                       label='Total Stock Value', color='lightcoral')
         
         # Customize the chart
-        ax.set_title("Daily Portfolio Composition (Cash + Total Stock Value)", fontsize=16, fontweight='bold')
+        ax.set_title("Daily Portfolio Composition (Cash + Total Stock Market Value)", fontsize=16, fontweight='bold')
         ax.set_xlabel("Date", fontsize=12)
         ax.set_ylabel("Value ($)", fontsize=12)
         ax.legend()

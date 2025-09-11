@@ -48,8 +48,11 @@ class HTMLGenerator(ReportGenerator):
         # Create a copy of the dataframe to work with
         df_copy = df.copy()
         
-        # Add totals row if there are numeric columns
-        if len(df_copy.columns) > 1:  # More than just Ticker column
+        # Check if totals row already exists
+        has_totals_row = not df_copy.empty and "Ticker" in df_copy.columns and df_copy.iloc[-1]["Ticker"] == "TOTAL"
+        
+        # Add totals row if there are numeric columns and no totals row exists yet
+        if len(df_copy.columns) > 1 and not has_totals_row:  # More than just Ticker column
             # Create totals row
             totals_row = {}
             for col in df_copy.columns:
@@ -102,6 +105,9 @@ class HTMLGenerator(ReportGenerator):
             
             # Convert to HTML
             html += df_with_totals.to_html(index=False, table_id="roi-table", escape=False, na_rep="")
+        elif len(df_copy.columns) > 1 and has_totals_row:
+            # Already has totals row, just convert normally
+            html += df_copy.to_html(index=False, table_id="roi-table", escape=False, na_rep="")
         else:
             # No numeric columns, just convert normally
             html += df_copy.to_html(index=False, table_id="roi-table", escape=False, na_rep="")
@@ -338,14 +344,14 @@ class HTMLGenerator(ReportGenerator):
                     <div class="metric-card">
                         <div class="metric-title">Total Portfolio Value</div>
                         <div class="metric-value">${summary_stats['total_value']:.2f}</div>
-                        <div>Current Value</div>
+                        <div></div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-title">Total Return</div>
+                        <div class="metric-title">Trade ROI</div>
                         <div class="metric-value { 'positive' if summary_stats['overall_roi'] >= 0 else 'negative' }">
                             {summary_stats['overall_roi']:.2f}%
                         </div>
-                        <div>({ '$+' if summary_stats['absolute_gain'] >= 0 else '$' }{summary_stats['absolute_gain']:.2f})</div>
+                        <div>({ '+$' if summary_stats['absolute_gain'] >= 0 else '-$' }{abs(summary_stats['absolute_gain']):.2f})</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-title">Annualized Volatility</div>
@@ -355,7 +361,7 @@ class HTMLGenerator(ReportGenerator):
                     <div class="metric-card">
                         <div class="metric-title">Sharpe Ratio</div>
                         <div class="metric-value">{volatility_metrics['sharpe_ratio']:.2f}</div>
-                        <div>Risk-Adjusted Return</div>
+                        <div></div>
                     </div>
                 </div>
             </div>
@@ -783,14 +789,31 @@ class HTMLGenerator(ReportGenerator):
                     <div class="metric-card">
                         <div class="metric-title">Total Portfolio Value</div>
                         <div class="metric-value">${summary_stats.get('total_value', 0):.2f}</div>
-                        <div>Current Value</div>
+                        <div></div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-title">Total Return</div>
+                        <div class="metric-title">Invested Value (Holdings)</div>
+                        <div class="metric-value">${summary_stats.get('invested_value_holdings', 0):.2f}</div>
+                        <div></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Trade ROI</div>
                         <div class="metric-value {'positive' if summary_stats.get('overall_roi', 0) >= 0 else 'negative'}">
                             {summary_stats.get('overall_roi', 0):.2f}%
                         </div>
-                        <div>({'$+' if summary_stats.get('absolute_gain', 0) >= 0 else '$'}{summary_stats.get('absolute_gain', 0):.2f})</div>
+                        <div>{'+$' if summary_stats.get('absolute_gain', 0) >= 0 else '-$'}{abs(summary_stats.get('absolute_gain', 0)):.2f}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Portfolio ROI</div>
+                        <div class="metric-value {'positive' if summary_stats.get('separate_roi_pct', 0) >= 0 else 'negative'}">
+                            {summary_stats.get('separate_roi_pct', 0):.2f}%
+                        </div>
+                        <div>Total Value / Initial Cash</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Cash Balance</div>
+                        <div class="metric-value">${summary_stats.get('cash_balance', 0):.2f}</div>
+                        <div></div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-title">Annualized Volatility</div>
@@ -800,7 +823,7 @@ class HTMLGenerator(ReportGenerator):
                     <div class="metric-card">
                         <div class="metric-title">Sharpe Ratio</div>
                         <div class="metric-value">{volatility_metrics.get('sharpe_ratio', 0):.2f}</div>
-                        <div>Risk-Adjusted Return</div>
+                        <div></div>
                     </div>
                 </div>
             </div>"""
@@ -816,28 +839,138 @@ class HTMLGenerator(ReportGenerator):
             section_html = f"""<div class="section">
                 <h2 class="section-title" id="{anchor}">{section['title']}</h2>"""
             
-            # Render section content
-            for item in section['content']:
-                if item['type'] == 'plot':
-                    plot_name = os.path.basename(item['path'])
-                    section_html += f"""
-                <h3 class="subsection-title">{item['title']}</h3>
-                <div class="plot-container">
-                    <img src="{plot_name}" alt="{item['title']}">
-                </div>"""
-                elif item['type'] == 'table':
-                    table_html = self.dataframe_to_html_table(item['data'], item['title'])
-                    section_html += f"""
-                {table_html}"""
-                elif item['type'] == 'text':
-                    section_html += f"""
-                <p>{item['text']}</p>"""
+            # Special handling for Risk Metrics section
+            if section['title'] == 'Risk Metrics':
+                section_html += self._render_risk_metrics_section(content)
+            # Special handling for Win/Loss Analysis section
+            elif section['title'] == 'Win/Loss Analysis':
+                section_html += self._render_win_loss_metrics_section(content)
+                # Render section content normally
+                for item in section['content']:
+                    if item['type'] == 'plot':
+                        plot_name = os.path.basename(item['path'])
+                        section_html += f"""
+                    <h3 class="subsection-title">{item['title']}</h3>
+                    <div class="plot-container">
+                        <img src="{plot_name}" alt="{item['title']}">
+                    </div>"""
+            else:
+                # Render section content
+                for item in section['content']:
+                    if item['type'] == 'plot':
+                        plot_name = os.path.basename(item['path'])
+                        section_html += f"""
+                    <h3 class="subsection-title">{item['title']}</h3>
+                    <div class="plot-container">
+                        <img src="{plot_name}" alt="{item['title']}">
+                    </div>"""
+                    elif item['type'] == 'table':
+                        table_html = self.dataframe_to_html_table(item['data'], item['title'])
+                        section_html += f"""
+                    {table_html}"""
+                    elif item['type'] == 'text':
+                        section_html += f"""
+                    <p>{item['text']}</p>"""
             
             section_html += """
             </div>"""
             sections_html += section_html
         
         return sections_html
+    
+    def _render_risk_metrics_section(self, content: ReportContent) -> str:
+        """Render the risk metrics section with all 7 metrics."""
+        risk_metrics = content.metrics.get('risk_metrics', {})
+        advanced_risk_metrics = content.metrics.get('advanced_risk_metrics', {})
+        
+        return f"""
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Average Drawdown</div>
+                        <div class="metric-value { 'negative' if risk_metrics.get('avg_drawdown', 0) < 0 else '' }">
+                            {risk_metrics.get('avg_drawdown', 0):.2f}%
+                        </div>
+                        <div>Across All Positions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Worst Drawdown</div>
+                        <div class="metric-value negative">
+                            {risk_metrics.get('worst_drawdown_value', 0):.2f}%
+                        </div>
+                        <div>{risk_metrics.get('worst_drawdown_ticker', 'N/A')}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Best Drawdown</div>
+                        <div class="metric-value { 'negative' if risk_metrics.get('best_drawdown_value', 0) < 0 else 'positive' }">
+                            {risk_metrics.get('best_drawdown_value', 0):.2f}%
+                        </div>
+                        <div>{risk_metrics.get('best_drawdown_ticker', 'N/A')}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">High Drawdown Stocks</div>
+                        <div class="metric-value">
+                            {risk_metrics.get('significant_drawdown_count', 0)}
+                        </div>
+                        <div>>10% Drawdown</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Sortino Ratio</div>
+                        <div class="metric-value">
+                            {advanced_risk_metrics.get('sortino_ratio', 0):.2f}
+                        </div>
+                        <div>Downside Risk-Adjusted Return</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Max Consecutive Wins</div>
+                        <div class="metric-value">
+                            {advanced_risk_metrics.get('max_consecutive_wins', 0)}
+                        </div>
+                        <div>Trading Days</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Max Consecutive Losses</div>
+                        <div class="metric-value negative">
+                            {advanced_risk_metrics.get('max_consecutive_losses', 0)}
+                        </div>
+                        <div>Trading Days</div>
+                    </div>
+                </div>"""
+    
+    def _render_win_loss_metrics_section(self, content: ReportContent) -> str:
+        """Render the win/loss metrics section with all 4 metrics."""
+        win_loss_metrics = content.metrics.get('win_loss_metrics', {})
+        
+        return f"""
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Win Rate</div>
+                        <div class="metric-value">
+                            {win_loss_metrics.get('win_rate', 0):.1f}%
+                        </div>
+                        <div>{win_loss_metrics.get('winning_positions', 0)}/{win_loss_metrics.get('total_positions', 0)} Positions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Average Win</div>
+                        <div class="metric-value positive">
+                            {win_loss_metrics.get('avg_win', 0):.1f}%
+                        </div>
+                        <div>Profitable Positions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Average Loss</div>
+                        <div class="metric-value negative">
+                            {win_loss_metrics.get('avg_loss', 0):.1f}%
+                        </div>
+                        <div>Losing Positions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Best Position</div>
+                        <div class="metric-value positive">
+                            {win_loss_metrics.get('best_position', {}).get('ROI (%)', 0):.1f}%
+                        </div>
+                        <div>{win_loss_metrics.get('best_position', {}).get('Ticker', 'N/A')}</div>
+                    </div>
+                </div>"""
     
     def _render_footer(self, content: ReportContent) -> str:
         """Render the report footer."""
