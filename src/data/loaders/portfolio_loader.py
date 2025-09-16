@@ -52,11 +52,14 @@ class PortfolioLoader:
         return out
     
     def get_currently_held_stocks(self, portfolio_df: pd.DataFrame) -> pd.DataFrame:
-        """Get currently held stocks by finding entries on the last date and filtering for positive shares."""
+        """Get currently held stocks by finding entries on the last date and filtering for positive shares and HOLD action."""
         # Find the last date in the portfolio
         last_date = portfolio_df["Date"].max()
         # Filter for entries on that date
         last_date_entries = portfolio_df[portfolio_df["Date"] == last_date]
-        # Filter for stocks with positive shares
-        current_holdings = last_date_entries[last_date_entries["Shares"] > 0]
+        # Filter for stocks with positive shares and HOLD action
+        current_holdings = last_date_entries[
+            (last_date_entries["Shares"] > 0) & 
+            (last_date_entries["Action"].str.contains("HOLD", case=False, na=False))
+        ]
         return current_holdings
