@@ -177,7 +177,7 @@ def run_automated_trading(api_key: str, model: str = "gpt-4", data_dir: str = "S
     # Load current portfolio
     portfolio_file = data_path / "chatgpt_portfolio_update.csv"
     if portfolio_file.exists():
-        portfolio_df, cash = load_latest_portfolio_state(str(portfolio_file))
+        portfolio_df, cash = load_latest_portfolio_state()
     else:
         portfolio_df = pd.DataFrame(columns=["ticker", "shares", "stop_loss", "buy_price", "cost_basis"])
         cash = 10000.0  # Default starting cash
